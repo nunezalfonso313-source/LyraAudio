@@ -14,32 +14,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Nuclear Clean and Sync
+      - name: Sync Architecture and Root Files
         run: |
-          # 1. Protect the ZIP and wipe everything else to fix "Inception" folders
-          ZIP_FILE=$(ls *.zip | grep -i "Lyra" | head -n 1)
-          mkdir .temp_safe
-          cp "$ZIP_FILE" .temp_safe/
-          rm -rf ./* ./.* 2>/dev/null || true
-          mv .temp_safe/* .
-          rm -rf .temp_safe
-
-          # 2. Fresh Extraction
-          unzip "$ZIP_FILE" -d .
-          
-          # 3. Intelligent folder normalization
-          # We look for the folder that actually contains 'src'
-          SRC_PATH=$(find . -name "src" -type d -path "*/app/src" | head -n 1)
-          APP_BASE=$(dirname "$SRC_PATH")
-          
-          if [ -d "$APP_BASE" ] && [ "$APP_BASE" != "./app" ]; then
-            rm -rf ./app # Delete any ghost app folder
-            mv "$APP_BASE" ./app
+          # 1. Move files to root if they are trapped inside LyraApp
+          if [ -d "LyraApp/app" ]; then
+            mv LyraApp/app .
+            rm -rf LyraApp
           fi
-
-      - name: Final Configuration
-        run: |
+          
+          # 2. Inject missing root configuration
           echo "include ':app'" > settings.gradle
+          
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -60,5 +45,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Lyra-Audio-Player
-          path: "**/*.apk"
-
+          path: "app/build/outputs/apk/debug/*.apk"
