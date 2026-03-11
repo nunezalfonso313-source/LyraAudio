@@ -14,15 +14,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Sync Architecture and Root Files
+      - name: Build Alignment
         run: |
-          # 1. Move files to root if they are trapped inside LyraApp
+          # 1. Move files if they are inside LyraApp
           if [ -d "LyraApp/app" ]; then
             mv LyraApp/app .
             rm -rf LyraApp
           fi
           
-          # 2. Inject missing root configuration
+          # 2. Create the MASTER root files
           echo "include ':app'" > settings.gradle
           
           cat <<EOF > build.gradle
@@ -40,7 +40,7 @@ jobs:
           gradle wrapper --gradle-version 7.6.1
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
-
+          
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
