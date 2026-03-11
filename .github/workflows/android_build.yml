@@ -14,20 +14,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Debug and Align Structure
+      - name: Force Android Structure
         run: |
-          # 1. Listar archivos para confirmar ubicacion real
-          echo "=== CURRENT REPO STRUCTURE ==="
-          ls -R
-          
-          # 2. Corregir ruta si estan dentro de LyraApp
-          if [ -d "LyraApp/app" ]; then
-            mv LyraApp/app .
-            rm -rf LyraApp
-          fi
-          
-          # 3. Forzar archivos de mando en la raiz
+          # 1. Ensure root configuration exists
           echo "include ':app'" > settings.gradle
+          
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -35,6 +26,24 @@ jobs:
           }
           allprojects {
               repositories { google(); mavenCentral() }
+          }
+          EOF
+
+          # 2. Force the app module to be an Android Application
+          # This overwrites app/build.gradle with a working skeleton
+          mkdir -p app
+          cat <<EOF > app/build.gradle
+          apply plugin: 'com.android.application'
+          android {
+              compileSdk 33
+              namespace "com.lyra.audio"
+              defaultConfig {
+                  applicationId "com.lyra.audio"
+                  minSdk 21
+                  targetSdk 33
+                  versionCode 1
+                  versionName "1.0"
+              }
           }
           EOF
 
