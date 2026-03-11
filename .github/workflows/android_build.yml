@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Lyra Audio Kernel
 on: [push]
 
 jobs:
@@ -14,36 +14,30 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS NEUTRON - Manifest Sanitization
+      - name: AEGIS KERNEL - Identity Alignment
         run: |
-          # 1. Isolation Zone
-          mkdir -p ./phantom_zone/src/main/java
+          # 1. Isolation and Protection
+          mkdir -p ./phantom_zone/src/main/java/com/lyra/audiokernel
           
-          # 2. Find and Capture Manifest
+          # 2. Capture Manifest and Java (Ensuring correct package path)
           MANIFEST_FILE=$(find . -name "AndroidManifest.xml" -not -path "*/.github/*" | head -n 1)
-          if [ -n "$MANIFEST_FILE" ]; then
-            cp "$MANIFEST_FILE" ./phantom_zone/src/main/
-          else
-            echo "FATAL: AndroidManifest.xml missing!" && exit 1
-          fi
+          JAVA_FILE=$(find . -name "MainActivity.java" -not -path "./app/*" | head -n 1)
           
-          # 3. CLEANING: Remove the legacy 'package' attribute to avoid conflict
-          # This is the "Neutron" fix
+          if [ -n "$MANIFEST_FILE" ]; then cp "$MANIFEST_FILE" ./phantom_zone/src/main/; fi
+          if [ -n "$JAVA_FILE" ]; then cp "$JAVA_FILE" ./phantom_zone/src/main/java/com/lyra/audiokernel/; fi
+          
+          # 3. Sanitization: Remove legacy package from XML and set correct name
           sed -i 's/package="[^"]*"//g' ./phantom_zone/src/main/AndroidManifest.xml
           
-          # 4. Find and Capture Java Source
-          JAVA_DIR=$(find . -name "java" -type d -not -path "./app/*" -not -path "./phantom_zone/*" | head -n 1)
-          if [ -n "$JAVA_DIR" ]; then
-            cp -r "$JAVA_DIR"/* ./phantom_zone/src/main/java/
-          fi
-          
-          # 5. Nuclear Wipe & Restore
+          # 4. Nuclear Wipe of Root
           find . -maxdepth 1 -not -name ".github" -not -name "phantom_zone" -not -name "." -exec rm -rf {} +
+          
+          # 5. Restore Industrial Structure
           mkdir -p app
           mv ./phantom_zone/* app/
           rm -rf ./phantom_zone
           
-          # 6. Inject Master Configurations
+          # 6. Inject Configurations (SYNCED TO AUDIOKERNEL)
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           
@@ -64,10 +58,10 @@ jobs:
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android {
-              namespace 'com.lyra.audio'
+              namespace 'com.lyra.audiokernel'
               compileSdk 34
               defaultConfig {
-                  applicationId 'com.lyra.audio'
+                  applicationId 'com.lyra.audiokernel'
                   minSdk 24
                   targetSdk 34
                   versionCode 1
@@ -88,5 +82,5 @@ jobs:
       - name: Deliver APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-Final-APK
+          name: Lyra-Kernel-V1
           path: "app/build/outputs/apk/debug/*.apk"
