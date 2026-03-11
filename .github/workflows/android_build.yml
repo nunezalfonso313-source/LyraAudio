@@ -1,5 +1,5 @@
-name: Build Android APK
-on: [push]
+- name: Extraer proyecto
+  run: unzip LyraAudio/LyraProject.zip -d .
 
 jobs:
   build:
