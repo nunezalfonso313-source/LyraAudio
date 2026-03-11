@@ -22,11 +22,20 @@ jobs:
           sdkmanager "ndk;25.2.9519653"
           sdkmanager "cmake;3.22.1"
 
-      - name: Mostrar estructura real
-        run: find . -not -path './.git/*' -type f
-
-      - name: Inyectar archivos raiz
+      - name: Reconstruir estructura correcta
         run: |
+          mkdir -p correct/app/src/main/cpp
+          mkdir -p correct/app/src/main/java/com/lyra/audiokernel
+
+          find . -name "MainActivity.java" | head -1 | xargs -I{} cp {} correct/app/src/main/java/com/lyra/audiokernel/
+          find . -name "lyra_kernel.cpp" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
+          find . -name "native-lib.cpp" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
+          find . -name "CMakeLists.txt" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
+          find . -name "AndroidManifest.xml" | head -1 | xargs -I{} cp {} correct/app/src/main/
+          find . -name "build.gradle" | grep -v "correct" | head -1 | xargs -I{} cp {} correct/app/
+
+          cp -r correct/app .
+
           echo "include ':app'" > settings.gradle
           echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:7.4.2' } }" > build.gradle
           echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
