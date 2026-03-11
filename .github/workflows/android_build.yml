@@ -14,34 +14,51 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Surgical Rebirth (AEGIS OMEGA)
+      - name: AEGIS RESOLUTE - Structural Fix
         run: |
-          # 1. Protect the source code (src) and wipe corrupt configurations
+          # 1. Isolate source code and protect it
           SRC_PATH=$(find . -name "src" -type d -not -path "*/app/src/*" | head -n 1)
           if [ -n "$SRC_PATH" ]; then
             mkdir -p ./temp_src
             cp -r "$SRC_PATH"/* ./temp_src/
           fi
           
-          # Nuclear wipe of root to kill line 1 errors
+          # 2. Complete Root Wipe to remove translation-corrupted files
           find . -maxdepth 1 -not -name ".github" -not -name "temp_src" -not -name "." -exec rm -rf {} +
           
-          # 2. Reconstruct structure
+          # 3. Create Industrial Structure
           mkdir -p app/src
           [ -d "./temp_src" ] && mv ./temp_src/* app/src/
           rm -rf ./temp_src
           
-          # 3. Inject Modern Master Files (English Pure)
-          printf "rootProject.name = 'LyraAudio'\ninclude ':app'\n" > settings.gradle
+          # 4. Inject Master Settings with Plugin Management (The Absolute Fix)
+          cat <<EOF > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = 'LyraAudio'
+          include ':app'
+          EOF
           
-          # Root Build with modern plugin management
+          # 5. Inject Modern Root Build
           cat <<EOF > build.gradle
           plugins {
               id 'com.android.application' version '8.2.0' apply false
           }
           EOF
 
-          # App Module with modern OMEGA syntax (Fixes Line 1 error)
+          # 6. Inject App Module (Fixed Identity)
           cat <<EOF > app/build.gradle
           plugins {
               id 'com.android.application'
@@ -64,9 +81,9 @@ jobs:
           }
           EOF
 
-      - name: Execute Hardened Compilation
+      - name: Force Master Compilation
         run: |
-          # Force download of stable Gradle 8.5 to bypass the unstable 9.3 version
+          # Force the use of stable Gradle 8.5
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
