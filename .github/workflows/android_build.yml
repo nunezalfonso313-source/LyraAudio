@@ -14,55 +14,48 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS TITAN - Infrastructure Assembly
+      - name: AEGIS HUNTER - Manifest & Source Alignment
         run: |
-          # 1. Protect source code
-          SRC_PATH=$(find . -name "src" -type d -not -path "*/app/src/*" | head -n 1)
-          if [ -n "$SRC_PATH" ]; then
-            mkdir -p ./temp_src
-            cp -r "$SRC_PATH"/* ./temp_src/
+          # 1. Locate the Manifest and Source files
+          MANIFEST_PATH=$(find . -name "AndroidManifest.xml" | head -n 1)
+          SRC_JAVA_PATH=$(find . -name "java" -type d | head -n 1)
+          
+          # 2. Create the strict Industrial Structure
+          mkdir -p app/src/main/java
+          
+          # 3. Move Manifest to its legal position
+          if [ -n "$MANIFEST_PATH" ]; then
+            mv "$MANIFEST_PATH" app/src/main/
+          else
+            echo "CRITICAL ERROR: AndroidManifest.xml not found in repo!"
+            exit 1
           fi
           
-          # 2. Nuclear wipe of ghost files
-          find . -maxdepth 1 -not -name ".github" -not -name "temp_src" -not -name "." -exec rm -rf {} +
+          # 4. Move Java sources to their legal position
+          if [ -n "$SRC_JAVA_PATH" ]; then
+            cp -r "$SRC_JAVA_PATH"/* app/src/main/java/
+          fi
+
+          # 5. Clean root and inject configuration
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
           
-          # 3. Create Industrial Structure
-          mkdir -p app/src
-          [ -d "./temp_src" ] && mv ./temp_src/* app/src/
-          rm -rf ./temp_src
-          
-          # 4. Inject Master Settings
           cat <<EOF > settings.gradle
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
+              repositories { google(); mavenCentral() }
           }
           rootProject.name = 'LyraAudio'
           include ':app'
           EOF
           
-          # 5. Inject Root Build
           cat <<EOF > build.gradle
-          plugins {
-              id 'com.android.application' version '8.2.0' apply false
-          }
+          plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
 
-          # 6. Inject App Module
           cat <<EOF > app/build.gradle
-          plugins {
-              id 'com.android.application'
-          }
+          plugins { id 'com.android.application' }
           android {
               namespace 'com.lyra.audio'
               compileSdk 34
@@ -76,16 +69,17 @@ jobs:
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.9.0'
           }
           EOF
 
-          # 7. THE FIX: Inject gradle.properties (The missing piece)
-          echo "android.useAndroidX=true" > gradle.properties
-          echo "android.enableJetifier=true" >> gradle.properties
-
-      - name: Master Compilation
+      - name: Final Compilation Execution
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Deliver APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyra-APK-Stable
+          path: "app/build/outputs/apk/debug/*.apk"
