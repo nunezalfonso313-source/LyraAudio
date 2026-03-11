@@ -14,25 +14,32 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Forensic Extraction and Repair
+      - name: Nuclear Clean and Sync
         run: |
-          # Find any zip file that looks like the project and unzip it
+          # 1. Protect the ZIP and wipe everything else to fix "Inception" folders
           ZIP_FILE=$(ls *.zip | grep -i "Lyra" | head -n 1)
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: No zip file containing 'Lyra' was found in the root."
-            ls -R
-            exit 1
-          fi
+          mkdir .temp_safe
+          cp "$ZIP_FILE" .temp_safe/
+          rm -rf ./* ./.* 2>/dev/null || true
+          mv .temp_safe/* .
+          rm -rf .temp_safe
+
+          # 2. Fresh Extraction
           unzip "$ZIP_FILE" -d .
           
-          # Normalize directory structure
-          if [ -d "LyraApp/app" ]; then
-            mv LyraApp/app .
+          # 3. Intelligent folder normalization
+          # We look for the folder that actually contains 'src'
+          SRC_PATH=$(find . -name "src" -type d -path "*/app/src" | head -n 1)
+          APP_BASE=$(dirname "$SRC_PATH")
+          
+          if [ -d "$APP_BASE" ] && [ "$APP_BASE" != "./app" ]; then
+            rm -rf ./app # Delete any ghost app folder
+            mv "$APP_BASE" ./app
           fi
-          
-          # Ensure English config files exist
+
+      - name: Final Configuration
+        run: |
           echo "include ':app'" > settings.gradle
-          
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -54,3 +61,4 @@ jobs:
         with:
           name: Lyra-Audio-Player
           path: "**/*.apk"
+
