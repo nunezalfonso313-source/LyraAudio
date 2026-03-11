@@ -1,4 +1,4 @@
-name: Build Lyra Audio Player
+name: Build Lyra Operative Player
 on: [push]
 
 jobs:
@@ -14,22 +14,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - Hardened Versioning Injection
+      - name: AEGIS - Media Engine Injection
         run: |
-          # 1. Limpieza absoluta
+          # 1. Purga y Reconstrucción de Rutas
           rm -rf *
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           
-          # 2. Manifiesto Blindado
+          # 2. Manifiesto con Permisos de Media
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
               <application
                   android:allowBackup="true"
-                  android:label="Lyra Player"
+                  android:label="Lyra Audio Player"
                   android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
                   <activity android:name="com.lyra.audiokernel.MainActivity" android:exported="true">
                       <intent-filter>
@@ -41,7 +40,7 @@ jobs:
           </manifest>
           EOF
 
-          # 3. Interfaz Visual
+          # 3. Interfaz con Estado de Reproduccion
           cat <<EOF > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -49,51 +48,105 @@ jobs:
               android:layout_height="match_parent"
               android:orientation="vertical"
               android:gravity="center"
-              android:background="#000000">
+              android:background="#000000"
+              android:padding="20dp">
               <TextView
+                  android:id="@+id/status_text"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
-                  android:text="LYRA AUDIO PLAYER"
+                  android:text="LYRA SYSTEM READY"
                   android:textColor="#00FF00"
-                  android:textSize="24sp"
-                  android:layout_marginBottom="20dp"/>
+                  android:textSize="22sp"
+                  android:layout_marginBottom="40dp"/>
               <Button
-                  android:id="@+id/btn_play"
-                  android:layout_width="200dp"
-                  android:layout_height="wrap_content"
-                  android:text="PROBAR MOTOR" />
+                  android:id="@+id/btn_select"
+                  android:layout_width="match_parent"
+                  android:layout_height="60dp"
+                  android:text="SELECCIONAR MUSICA" />
+              <Button
+                  android:id="@+id/btn_stop"
+                  android:layout_width="match_parent"
+                  android:layout_height="60dp"
+                  android:text="DETENER"
+                  android:layout_marginTop="10dp"
+                  android:visibility="gone" />
           </LinearLayout>
           EOF
 
-          # 4. Codigo de MainActivity
+          # 4. MainActivity con Lógica de Reproducción Real
           cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
+          import android.content.Intent;
+          import android.net.Uri;
           import android.os.Bundle;
+          import android.view.View;
           import android.widget.Button;
-          import android.widget.Toast;
+          import android.widget.TextView;
+          import androidx.activity.result.ActivityResultLauncher;
+          import androidx.activity.result.contract.ActivityResultContracts;
           import androidx.appcompat.app.AppCompatActivity;
+          import androidx.media3.common.MediaItem;
+          import androidx.media3.exoplayer.ExoPlayer;
 
           public class MainActivity extends AppCompatActivity {
+              private ExoPlayer player;
+              private TextView statusText;
+              private Button btnStop;
+
+              private final ActivityResultLauncher<Intent> filePickerLauncher = registerForActivityResult(
+                  new ActivityResultContracts.StartActivityForResult(),
+                  result -> {
+                      if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                          Uri uri = result.getData().getData();
+                          startPlayback(uri);
+                      }
+                  }
+              );
+
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
-                  Button btnPlay = findViewById(R.id.btn_play);
-                  btnPlay.setOnClickListener(v -> {
-                      Toast.makeText(this, "Motor Lyra Activo", Toast.LENGTH_SHORT).show();
+
+                  player = new ExoPlayer.Builder(this).build();
+                  statusText = findViewById(R.id.status_text);
+                  btnStop = findViewById(R.id.btn_stop);
+                  Button btnSelect = findViewById(R.id.btn_select);
+
+                  btnSelect.setOnClickListener(v -> {
+                      Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                      intent.addCategory(Intent.CATEGORY_OPENABLE);
+                      intent.setType("audio/*");
+                      filePickerLauncher.launch(intent);
                   });
+
+                  btnStop.setOnClickListener(v -> {
+                      player.stop();
+                      btnStop.setVisibility(View.GONE);
+                      statusText.setText("REPRODUCCION DETENIDA");
+                  });
+              }
+
+              private void startPlayback(Uri uri) {
+                  MediaItem mediaItem = MediaItem.fromUri(uri);
+                  player.setMediaItem(mediaItem);
+                  player.prepare();
+                  player.play();
+                  statusText.setText("REPRODUCIENDO...");
+                  btnStop.setVisibility(View.VISIBLE);
+              }
+
+              @Override
+              protected void onDestroy() {
+                  super.onDestroy();
+                  if (player != null) player.release();
               }
           }
           EOF
 
-          # 5. Configuracion Maestra de Gradle (Solucion al error de version)
-          echo "android.useAndroidX=true" > gradle.properties
-          echo "android.enableJetifier=true" >> gradle.properties
-          
+          # 5. Gradle con dependencias de Media3
           cat <<EOF > settings.gradle
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
@@ -102,14 +155,10 @@ jobs:
           include ':app'
           EOF
           
-          # Root build sin plugins conflictivos
           echo "buildscript { repositories { google(); mavenCentral() } }" > build.gradle
 
-          # App build con VERSION EXPLÍCITA (Aqui esta el arreglo)
           cat <<EOF > app/build.gradle
-          plugins {
-              id 'com.android.application' version '8.2.0'
-          }
+          plugins { id 'com.android.application' version '8.2.0' }
           android {
               namespace 'com.lyra.audiokernel'
               compileSdk 34
@@ -123,17 +172,19 @@ jobs:
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'androidx.media3:media3-exoplayer:1.2.0'
+              implementation 'androidx.media3:media3-common:1.2.0'
           }
           EOF
 
-      - name: Final Execution
+      - name: Master Compilation
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Deliver Functional APK
+      - name: Deliver Functional Player
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-Final-Functional
+          name: Lyra-Operative-Player
           path: "app/build/outputs/apk/debug/*.apk"
