@@ -5,25 +5,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Structural Alignment (AEGIS Protocol)
+      - name: Fix directory structure
         run: |
-          # 1. Limpieza Nuclear de residuos
-          find . -name "app" -type d -not -path "./app" -exec rm -rf {} +
-          mkdir -p app/src
+          # Force moving the app folder to root if it exists inside LyraApp
+          if [ -d "LyraApp/app" ]; then
+            mv LyraApp/app .
+            rm -rf LyraApp
+          fi
           
-          # 2. Inyectar Settings Root (Mapa Maestro)
-          printf "include ':app'\n" > settings.gradle
+          # Ensure essential root files are present and in English
+          echo "include ':app'" > settings.gradle
           
-          # 3. Inyectar Build Root (El Cerebro)
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -34,28 +35,15 @@ jobs:
           }
           EOF
 
-          # 4. Inyectar App Module (Reparación de Línea 1)
-          cat <<EOF > app/build.gradle
-          apply plugin: 'com.android.application'
-          android {
-              compileSdk 33
-              namespace "com.lyra.audio"
-              defaultConfig {
-                  applicationId "com.lyra.audio"
-                  minSdk 21
-                  targetSdk 33
-                  versionCode 1
-                  versionName "1.0"
-              }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-          }
-          EOF
-
-      - name: Execute Master Build
+      - name: Generate Wrapper and Compile
         run: |
-          # Forzamos la descarga de Gradle 7.5 (estable) ignorando el 9.3 del sistema
+          # Force download of Gradle 7.5 to avoid system version 9.3
           gradle wrapper --gradle-version 7.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyra-Output
+          path: "app/build/outputs/apk/debug/*.apk"
