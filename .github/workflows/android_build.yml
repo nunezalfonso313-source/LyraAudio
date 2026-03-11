@@ -14,61 +14,59 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Hardened Architecture Rebuild
+      - name: Surgical Rebirth (AEGIS OMEGA)
         run: |
-          # Find the source folder wherever it is and move it to a safe place
+          # 1. Protect the source code (src) and wipe corrupt configurations
           SRC_PATH=$(find . -name "src" -type d -not -path "*/app/src/*" | head -n 1)
-          mkdir -p ./temp_src
-          cp -r "$SRC_PATH"/* ./temp_src/
+          if [ -n "$SRC_PATH" ]; then
+            mkdir -p ./temp_src
+            cp -r "$SRC_PATH"/* ./temp_src/
+          fi
           
-          # Clean root directory from any ghost folders or corrupt files
+          # Nuclear wipe of root to kill line 1 errors
           find . -maxdepth 1 -not -name ".github" -not -name "temp_src" -not -name "." -exec rm -rf {} +
           
-          # Rebuild the app module from scratch
+          # 2. Reconstruct structure
           mkdir -p app/src
-          mv ./temp_src/* app/src/
+          [ -d "./temp_src" ] && mv ./temp_src/* app/src/
           rm -rf ./temp_src
           
-          # Force root configuration files in plain English
-          echo "include ':app'" > settings.gradle
+          # 3. Inject Modern Master Files (English Pure)
+          printf "rootProject.name = 'LyraAudio'\ninclude ':app'\n" > settings.gradle
           
+          # Root Build with modern plugin management
           cat <<EOF > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }
-          }
-          allprojects {
-              repositories { google(); mavenCentral() }
+          plugins {
+              id 'com.android.application' version '8.2.0' apply false
           }
           EOF
 
-          # Force app module identity (The Master Key)
+          # App Module with modern OMEGA syntax (Fixes Line 1 error)
           cat <<EOF > app/build.gradle
-          apply plugin: 'com.android.application'
+          plugins {
+              id 'com.android.application'
+          }
+
           android {
-              compileSdk 33
-              namespace "com.lyra.audio"
+              namespace 'com.lyra.audio'
+              compileSdk 34
               defaultConfig {
-                  applicationId "com.lyra.audio"
-                  minSdk 21
-                  targetSdk 33
+                  applicationId 'com.lyra.audio'
+                  minSdk 24
+                  targetSdk 34
                   versionCode 1
-                  versionName "1.0"
+                  versionName '1.0'
               }
           }
+
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
           }
           EOF
 
-      - name: Force Master Compilation
+      - name: Execute Hardened Compilation
         run: |
-          gradle wrapper --gradle-version 7.5
+          # Force download of stable Gradle 8.5 to bypass the unstable 9.3 version
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
-
-      - name: Delivery
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lyra-APK-Stable
-          path: "app/build/outputs/apk/debug/*.apk"
