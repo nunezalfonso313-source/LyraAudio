@@ -22,6 +22,9 @@ jobs:
           sdkmanager "ndk;25.2.9519653"
           sdkmanager "cmake;3.22.1"
 
+      - name: Mostrar estructura real
+        run: find . -not -path './.git/*' -type f
+
       - name: Inyectar archivos raiz
         run: |
           echo "include ':app'" > settings.gradle
@@ -32,15 +35,6 @@ jobs:
         run: |
           gradle wrapper --gradle-version=7.6.1
           chmod +x ./gradlew
-
-      - name: Diagnostico archivos
-        run: |
-          echo "=== settings.gradle ==="
-          cat settings.gradle
-          echo "=== build.gradle raiz ==="
-          cat build.gradle
-          echo "=== app/build.gradle ==="
-          cat app/build.gradle
 
       - name: Compilar APK
         run: ./gradlew :app:assembleDebug --stacktrace
