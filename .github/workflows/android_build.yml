@@ -14,9 +14,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force Android Structure
+      - name: Surgical File Alignment
         run: |
-          # 1. Ensure root configuration exists
+          # 1. Buscar donde demonios quedo el build.gradle y el src
+          # Y moverlos a una carpeta limpia llamada 'app'
+          mkdir -p ./app_new
+          find . -name "src" -type d -exec cp -r {} ./app_new/ \;
+          
+          # 2. Limpiar la raiz para evitar conflictos
+          find . -maxdepth 1 -not -name ".github" -not -name "app_new" -not -name "." -exec rm -rf {} +
+          
+          # 3. Restaurar estructura industrial
+          mv app_new app
+          
+          # 4. Inyectar archivos de mando en INGLES PURO (Root)
           echo "include ':app'" > settings.gradle
           
           cat <<EOF > build.gradle
@@ -29,9 +40,7 @@ jobs:
           }
           EOF
 
-          # 2. Force the app module to be an Android Application
-          # This overwrites app/build.gradle with a working skeleton
-          mkdir -p app
+          # 5. Inyectar build.gradle del modulo (App)
           cat <<EOF > app/build.gradle
           apply plugin: 'com.android.application'
           android {
@@ -45,9 +54,12 @@ jobs:
                   versionName "1.0"
               }
           }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+          }
           EOF
 
-      - name: Master Compilation
+      - name: Final Build
         run: |
           gradle wrapper --gradle-version 7.6.1
           chmod +x gradlew
@@ -57,4 +69,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Lyra-Audio-Player
-          path: "app/build/outputs/apk/debug/*.apk"
+          path: "**/*.apk"
