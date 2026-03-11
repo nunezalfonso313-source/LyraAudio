@@ -1,4 +1,4 @@
-name: Build Lyra Safe Mode
+name: Build Lyra Safe Mode V2
 on: [push]
 
 jobs:
@@ -14,31 +14,41 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS SAFE-MODE - Neural Bypass
+      - name: AEGIS SAFE-MODE - Global Alignment
         run: |
-          # 1. Isolation Zone
+          # 1. Create Isolation Zone
           mkdir -p ./phantom_zone/src/main/java/com/lyra/audiokernel
           
-          # 2. Capture Manifest and Java
-          MANIFEST_FILE=$(find . -name "AndroidManifest.xml" -not -path "*/.github/*" | head -n 1)
-          JAVA_FILE=$(find . -name "MainActivity.java" -not -path "./app/*" | head -n 1)
+          # 2. Global Search (No exclusions to find the lost files)
+          MANIFEST_FILE=$(find . -name "AndroidManifest.xml" | head -n 1)
+          JAVA_FILE=$(find . -name "MainActivity.java" | head -n 1)
           
+          # 3. Validation and Extraction
+          if [ -z "$MANIFEST_FILE" ] || [ -z "$JAVA_FILE" ]; then
+            echo "CRITICAL: Files not found. Search logs:"
+            find . -maxdepth 3
+            exit 1
+          fi
+          
+          echo "Files found: $MANIFEST_FILE and $JAVA_FILE"
           cp "$MANIFEST_FILE" ./phantom_zone/src/main/
           cp "$JAVA_FILE" ./phantom_zone/src/main/java/com/lyra/audiokernel/
           
-          # 3. SURGERY: Comment out C++ lines to prevent crash
+          # 4. SURGERY: Disable C++ calls to prevent crash
           TARGET_JAVA="./phantom_zone/src/main/java/com/lyra/audiokernel/MainActivity.java"
           sed -i 's/System.loadLibrary/\/\/ System.loadLibrary/g' "$TARGET_JAVA"
           sed -i 's/tv.setText(stringFromJNI())/tv.setText("LYRA KERNEL V1: ONLINE")/g' "$TARGET_JAVA"
           sed -i 's/public native String stringFromJNI()/\/\/ public native String stringFromJNI()/g' "$TARGET_JAVA"
           
-          # 4. Cleanup and Structure
+          # 5. Total Root Wipe (Except .github and phantom_zone)
           find . -maxdepth 1 -not -name ".github" -not -name "phantom_zone" -not -name "." -exec rm -rf {} +
+          
+          # 6. Restore Final Structure
           mkdir -p app
           mv ./phantom_zone/* app/
           rm -rf ./phantom_zone
           
-          # 5. Inject Verified Configurations
+          # 7. Inject Master Configs
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           
@@ -74,14 +84,14 @@ jobs:
           }
           EOF
 
-      - name: Master Compilation
+      - name: Compilation Execution
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Deliver Stable APK
+      - name: Artifact Delivery
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-Safe-Mode
+          name: Lyra-Safe-Mode-V2
           path: "app/build/outputs/apk/debug/*.apk"
