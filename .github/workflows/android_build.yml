@@ -14,17 +14,25 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Fix directory structure
+      - name: Overlord Architecture Rebuild
         run: |
-          # Force moving the app folder to root if it exists inside LyraApp
-          if [ -d "LyraApp/app" ]; then
-            mv LyraApp/app .
-            rm -rf LyraApp
-          fi
+          # 1. Search for the source code and protect it
+          SRC_PATH=$(find . -name "src" -type d -not -path "*/app/src/*" | head -n 1)
+          mkdir -p ./temp_src
+          cp -r "$SRC_PATH"/* ./temp_src/
           
-          # Ensure essential root files are present and in English
+          # 2. Wipe everything to avoid "Inception" folders
+          find . -maxdepth 1 -not -name ".github" -not -name "temp_src" -not -name "." -exec rm -rf {} +
+          
+          # 3. Create Industrial Structure
+          mkdir -p app/src
+          mv ./temp_src/* app/src/
+          rm -rf ./temp_src
+          
+          # 4. Inject Master Settings
           echo "include ':app'" > settings.gradle
           
+          # 5. Inject Master Root Build
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -35,15 +43,33 @@ jobs:
           }
           EOF
 
-      - name: Generate Wrapper and Compile
+          # 6. Inject Master App Module (The Identity Fix)
+          cat <<EOF > app/build.gradle
+          apply plugin: 'com.android.application'
+          android {
+              compileSdk 33
+              namespace "com.lyra.audio"
+              defaultConfig {
+                  applicationId "com.lyra.audio"
+                  minSdk 21
+                  targetSdk 33
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+          }
+          EOF
+
+      - name: Force Compilation
         run: |
-          # Force download of Gradle 7.5 to avoid system version 9.3
           gradle wrapper --gradle-version 7.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Upload APK Artifact
+      - name: Deliver APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-Output
+          name: Lyra-Final-Build
           path: "app/build/outputs/apk/debug/*.apk"
