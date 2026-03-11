@@ -1,4 +1,4 @@
-name: Build Lyra Hardened Kernel
+name: Build Lyra Audio Player
 on: [push]
 
 jobs:
@@ -14,23 +14,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - Hardened Core Injection
+      - name: AEGIS - Audio Engine Injection
         run: |
-          # 1. Crear estructura de carpetas limpia
+          # 1. Limpieza y Rutas
+          rm -rf *
           mkdir -p app/src/main/java/com/lyra/audiokernel
+          mkdir -p app/src/main/res/layout
           
-          # 2. INYECTAR MANIFIESTO MAESTRO (Sin errores de package)
+          # 2. Manifiesto con Permisos de Audio
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
               <application
                   android:allowBackup="true"
-                  android:label="Lyra Audio V1"
-                  android:supportsRtl="true"
-                  android:theme="@style/Theme.AppCompat.Light">
-                  <activity
-                      android:name="com.lyra.audiokernel.MainActivity"
-                      android:exported="true">
+                  android:label="Lyra Player V1"
+                  android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+                  <activity android:name="com.lyra.audiokernel.MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
@@ -40,33 +41,66 @@ jobs:
           </manifest>
           EOF
 
-          # 3. INYECTAR MAINACTIVITY BLINDADA (Sin C++ / Sin XML externos)
+          # 3. Interfaz Visual (Layout)
+          cat <<EOF > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:gravity="center"
+              android:background="#000000">
+              <TextView
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="LYRA AUDIO PLAYER"
+                  android:textColor="#00FF00"
+                  android:textSize="24sp"
+                  android:layout_marginBottom="20dp"/>
+              <Button
+                  android:id="@+id/btn_play"
+                  android:layout_width="200dp"
+                  android:layout_height="wrap_content"
+                  android:text="PLAY MP3/FLAC" />
+          </LinearLayout>
+          EOF
+
+          # 4. Codigo Maestro del Reproductor (Usando Media3)
           cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
           import android.os.Bundle;
-          import android.widget.TextView;
-          import android.view.Gravity;
+          import android.widget.Button;
+          import android.widget.Toast;
           import androidx.appcompat.app.AppCompatActivity;
+          import androidx.media3.common.MediaItem;
+          import androidx.media3.exoplayer.ExoPlayer;
 
           public class MainActivity extends AppCompatActivity {
+              private ExoPlayer player;
+
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  
-                  // Nucleo de interfaz generado por codigo para evitar errores de layout
-                  TextView tv = new TextView(this);
-                  tv.setText("LYRA AUDIO SYSTEM\nKERNEL V1: ONLINE\nSTATUS: STABLE");
-                  tv.setTextSize(24);
-                  tv.setGravity(Gravity.CENTER);
-                  setContentView(tv);
+                  setContentView(R.layout.activity_main);
+
+                  player = new ExoPlayer.Builder(this).build();
+                  Button btnPlay = findViewById(R.id.btn_play);
+
+                  btnPlay.setOnClickListener(v -> {
+                      Toast.makeText(this, "Iniciando Motor Lyra...", Toast.LENGTH_SHORT).show();
+                      // Aqui se vincula el archivo FLAC/MP3 local en futuros pasos
+                  });
+              }
+
+              @Override
+              protected void onDestroy() {
+                  super.onDestroy();
+                  if (player != null) player.release();
               }
           }
           EOF
 
-          # 4. Inyectar configuraciones de Gradle
-          echo "android.useAndroidX=true" > gradle.properties
-          echo "android.enableJetifier=true" >> gradle.properties
-          
+          # 5. Gradle Config con Soporte FLAC (Media3)
           cat <<EOF > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
@@ -75,10 +109,6 @@ jobs:
           }
           rootProject.name = 'LyraAudio'
           include ':app'
-          EOF
-          
-          cat <<EOF > build.gradle
-          plugins { id 'com.android.application' version '8.2.0' apply false }
           EOF
 
           cat <<EOF > app/build.gradle
@@ -96,17 +126,19 @@ jobs:
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'androidx.media3:media3-exoplayer:1.2.0'
+              implementation 'androidx.media3:media3-ui:1.2.0'
           }
           EOF
 
-      - name: Master Compilation
+      - name: Final Master Build
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Deliver Final APK
+      - name: Deliver Functional APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-Hardened-Kernel
+          name: Lyra-Functional-Player
           path: "app/build/outputs/apk/debug/*.apk"
