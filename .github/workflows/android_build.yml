@@ -14,24 +14,48 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Structural Alignment
+      - name: Structural Alignment (AEGIS Protocol)
         run: |
-          # 1. Limpieza de carpetas fantasma
+          # 1. Limpieza Nuclear de residuos
           find . -name "app" -type d -not -path "./app" -exec rm -rf {} +
           mkdir -p app/src
           
-          # 2. Inyectar Settings Root (Inglés Técnico)
+          # 2. Inyectar Settings Root (Mapa Maestro)
           printf "include ':app'\n" > settings.gradle
           
-          # 3. Inyectar Build Root (Compatibilidad Total)
-          printf "buildscript {\n    repositories { google(); mavenCentral() }\n    dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }\n}\nallprojects {\n    repositories { google(); mavenCentral() }\n}" > build.gradle
+          # 3. Inyectar Build Root (El Cerebro)
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          EOF
 
           # 4. Inyectar App Module (Reparación de Línea 1)
-          printf "apply plugin: 'com.android.application'\n\nandroid {\n    compileSdk 33\n    namespace \"com.lyra.audio\"\n    defaultConfig {\n        applicationId \"com.lyra.audio\"\n        minSdk 21\n        targetSdk 33\n        versionCode 1\n        versionName \"1.0\"\n    }\n}\n\ndependencies {\n    implementation 'androidx.appcompat:appcompat:1.6.1'\n}" > app/build.gradle
+          cat <<EOF > app/build.gradle
+          apply plugin: 'com.android.application'
+          android {
+              compileSdk 33
+              namespace "com.lyra.audio"
+              defaultConfig {
+                  applicationId "com.lyra.audio"
+                  minSdk 21
+                  targetSdk 33
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+          }
+          EOF
 
       - name: Execute Master Build
         run: |
-          # Usamos Java 17 para satisfacer al sistema, pero bajamos Gradle a 7.5 para tu APK
+          # Forzamos la descarga de Gradle 7.5 (estable) ignorando el 9.3 del sistema
           gradle wrapper --gradle-version 7.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
