@@ -8,56 +8,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java 11
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
 
-      - name: Force Clean Configuration
+      - name: Force Industrial Environment
         run: |
-          # 1. Eliminar cualquier residuo de carpetas
-          if [ -d "LyraApp/app" ]; then
-            mv LyraApp/app .
-            rm -rf LyraApp
-          fi
+          # 1. Limpieza Nuclear de carpetas duplicadas
+          find . -name "app" -type d -not -path "./app" -exec rm -rf {} +
+          mkdir -p app/src
+          
+          # 2. Inyectar Settings Root (Ingles puro)
+          printf "include ':app'\n" > settings.gradle
+          
+          # 3. Inyectar Build Root (Cerebro del sistema)
+          printf "buildscript {\n    repositories { google(); mavenCentral() }\n    dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }\n}\nallprojects {\n    repositories { google(); mavenCentral() }\n}" > build.gradle
 
-          # 2. Inyectar Settings Root
-          echo "include ':app'" > settings.gradle
+          # 4. Inyectar App Module (Esto repara el error de la linea 1)
+          printf "apply plugin: 'com.android.application'\n\nandroid {\n    compileSdk 32\n    namespace \"com.lyra.audio\"\n    defaultConfig {\n        applicationId \"com.lyra.audio\"\n        minSdk 21\n        targetSdk 32\n        versionCode 1\n        versionName \"1.0\"\n    }\n}\n\ndependencies {\n    implementation 'androidx.appcompat:appcompat:1.4.1'\n}" > app/build.gradle
 
-          # 3. Inyectar Build Root
-          cat <<EOF > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }
-          }
-          allprojects {
-              repositories { google(); mavenCentral() }
-          }
-          EOF
-
-          # 4. Inyectar App Module (REEMPLAZA TU EDICION MANUAL)
-          mkdir -p app
-          cat <<EOF > app/build.gradle
-          apply plugin: 'com.android.application'
-          android {
-              compileSdk 33
-              namespace "com.lyra.audio"
-              defaultConfig {
-                  applicationId "com.lyra.audio"
-                  minSdk 21
-                  targetSdk 33
-                  versionCode 1
-                  versionName "1.0"
-              }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-          }
-          EOF
-
-      - name: Final Build Execution
+      - name: Build APK
         run: |
-          gradle wrapper --gradle-version 7.6.1
+          # Forzamos Gradle 7.5 para evitar el error de la version 9.3
+          gradle wrapper --gradle-version 7.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
