@@ -26,19 +26,22 @@ jobs:
         run: |
           mkdir -p correct/app/src/main/cpp
           mkdir -p correct/app/src/main/java/com/lyra/audiokernel
-
           find . -name "MainActivity.java" | head -1 | xargs -I{} cp {} correct/app/src/main/java/com/lyra/audiokernel/
           find . -name "lyra_kernel.cpp" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
           find . -name "native-lib.cpp" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
           find . -name "CMakeLists.txt" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
           find . -name "AndroidManifest.xml" | head -1 | xargs -I{} cp {} correct/app/src/main/
-          find . -name "build.gradle" | grep -v "correct" | head -1 | xargs -I{} cp {} correct/app/
-
           cp -r correct/app .
 
+      - name: Inyectar archivos raiz
+        run: |
           echo "include ':app'" > settings.gradle
           echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:7.4.2' } }" > build.gradle
           echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
+
+      - name: Reescribir app/build.gradle
+        run: |
+          printf 'apply plugin: "com.android.application"\nandroid {\n  compileSdkVersion 33\n  defaultConfig {\n    applicationId "com.lyra.audiokernel"\n    minSdkVersion 21\n    targetSdkVersion 33\n    versionCode 1\n    versionName "1.0"\n    externalNativeBuild { cmake { cppFlags "-std=c++17" } }\n  }\n  externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }\n}\ndependencies {\n  implementation "androidx.appcompat:appcompat:1.6.1"\n}\n' > app/build.gradle
 
       - name: Generar Gradle Wrapper
         run: |
