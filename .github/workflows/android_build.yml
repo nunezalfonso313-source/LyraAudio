@@ -14,16 +14,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS RESOLUTE - Structural Fix
+      - name: AEGIS TITAN - Infrastructure Assembly
         run: |
-          # 1. Isolate source code and protect it
+          # 1. Protect source code
           SRC_PATH=$(find . -name "src" -type d -not -path "*/app/src/*" | head -n 1)
           if [ -n "$SRC_PATH" ]; then
             mkdir -p ./temp_src
             cp -r "$SRC_PATH"/* ./temp_src/
           fi
           
-          # 2. Complete Root Wipe to remove translation-corrupted files
+          # 2. Nuclear wipe of ghost files
           find . -maxdepth 1 -not -name ".github" -not -name "temp_src" -not -name "." -exec rm -rf {} +
           
           # 3. Create Industrial Structure
@@ -31,7 +31,7 @@ jobs:
           [ -d "./temp_src" ] && mv ./temp_src/* app/src/
           rm -rf ./temp_src
           
-          # 4. Inject Master Settings with Plugin Management (The Absolute Fix)
+          # 4. Inject Master Settings
           cat <<EOF > settings.gradle
           pluginManagement {
               repositories {
@@ -51,19 +51,18 @@ jobs:
           include ':app'
           EOF
           
-          # 5. Inject Modern Root Build
+          # 5. Inject Root Build
           cat <<EOF > build.gradle
           plugins {
               id 'com.android.application' version '8.2.0' apply false
           }
           EOF
 
-          # 6. Inject App Module (Fixed Identity)
+          # 6. Inject App Module
           cat <<EOF > app/build.gradle
           plugins {
               id 'com.android.application'
           }
-
           android {
               namespace 'com.lyra.audio'
               compileSdk 34
@@ -75,15 +74,18 @@ jobs:
                   versionName '1.0'
               }
           }
-
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.9.0'
           }
           EOF
 
-      - name: Force Master Compilation
+          # 7. THE FIX: Inject gradle.properties (The missing piece)
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+
+      - name: Master Compilation
         run: |
-          # Force the use of stable Gradle 8.5
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
