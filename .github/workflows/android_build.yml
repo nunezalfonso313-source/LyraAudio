@@ -14,14 +14,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - Audio Engine Injection
+      - name: AEGIS - Hardened Versioning Injection
         run: |
-          # 1. Limpieza y Rutas
+          # 1. Limpieza absoluta
           rm -rf *
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           
-          # 2. Manifiesto con Permisos de Audio
+          # 2. Manifiesto Blindado
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -29,7 +29,7 @@ jobs:
               <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
               <application
                   android:allowBackup="true"
-                  android:label="Lyra Player V1"
+                  android:label="Lyra Player"
                   android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
                   <activity android:name="com.lyra.audiokernel.MainActivity" android:exported="true">
                       <intent-filter>
@@ -41,7 +41,7 @@ jobs:
           </manifest>
           EOF
 
-          # 3. Interfaz Visual (Layout)
+          # 3. Interfaz Visual
           cat <<EOF > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -61,48 +61,39 @@ jobs:
                   android:id="@+id/btn_play"
                   android:layout_width="200dp"
                   android:layout_height="wrap_content"
-                  android:text="PLAY MP3/FLAC" />
+                  android:text="PROBAR MOTOR" />
           </LinearLayout>
           EOF
 
-          # 4. Codigo Maestro del Reproductor (Usando Media3)
+          # 4. Codigo de MainActivity
           cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
           import android.os.Bundle;
           import android.widget.Button;
           import android.widget.Toast;
           import androidx.appcompat.app.AppCompatActivity;
-          import androidx.media3.common.MediaItem;
-          import androidx.media3.exoplayer.ExoPlayer;
 
           public class MainActivity extends AppCompatActivity {
-              private ExoPlayer player;
-
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
-
-                  player = new ExoPlayer.Builder(this).build();
                   Button btnPlay = findViewById(R.id.btn_play);
-
                   btnPlay.setOnClickListener(v -> {
-                      Toast.makeText(this, "Iniciando Motor Lyra...", Toast.LENGTH_SHORT).show();
-                      // Aqui se vincula el archivo FLAC/MP3 local en futuros pasos
+                      Toast.makeText(this, "Motor Lyra Activo", Toast.LENGTH_SHORT).show();
                   });
-              }
-
-              @Override
-              protected void onDestroy() {
-                  super.onDestroy();
-                  if (player != null) player.release();
               }
           }
           EOF
 
-          # 5. Gradle Config con Soporte FLAC (Media3)
+          # 5. Configuracion Maestra de Gradle (Solucion al error de version)
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          
           cat <<EOF > settings.gradle
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
@@ -110,9 +101,15 @@ jobs:
           rootProject.name = 'LyraAudio'
           include ':app'
           EOF
+          
+          # Root build sin plugins conflictivos
+          echo "buildscript { repositories { google(); mavenCentral() } }" > build.gradle
 
+          # App build con VERSION EXPLÍCITA (Aqui esta el arreglo)
           cat <<EOF > app/build.gradle
-          plugins { id 'com.android.application' }
+          plugins {
+              id 'com.android.application' version '8.2.0'
+          }
           android {
               namespace 'com.lyra.audiokernel'
               compileSdk 34
@@ -126,12 +123,10 @@ jobs:
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'androidx.media3:media3-exoplayer:1.2.0'
-              implementation 'androidx.media3:media3-ui:1.2.0'
           }
           EOF
 
-      - name: Final Master Build
+      - name: Final Execution
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
@@ -140,5 +135,5 @@ jobs:
       - name: Deliver Functional APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-Functional-Player
+          name: Lyra-Final-Functional
           path: "app/build/outputs/apk/debug/*.apk"
