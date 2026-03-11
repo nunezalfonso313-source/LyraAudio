@@ -8,51 +8,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configurar JDK 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Instalar Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Instalar NDK y CMake
+      - name: Clean and Repair Structure
         run: |
-          sdkmanager "ndk;25.2.9519653"
-          sdkmanager "cmake;3.22.1"
-
-      - name: Reconstruir estructura correcta
-        run: |
-          mkdir -p correct/app/src/main/cpp
-          mkdir -p correct/app/src/main/java/com/lyra/audiokernel
-          find . -name "MainActivity.java" | head -1 | xargs -I{} cp {} correct/app/src/main/java/com/lyra/audiokernel/
-          find . -name "lyra_kernel.cpp" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
-          find . -name "native-lib.cpp" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
-          find . -name "CMakeLists.txt" | head -1 | xargs -I{} cp {} correct/app/src/main/cpp/
-          find . -name "AndroidManifest.xml" | head -1 | xargs -I{} cp {} correct/app/src/main/
-          cp -r correct/app .
-
-      - name: Inyectar archivos raiz
-        run: |
+          unzip LyraProject.zip -d .
+          if [ -d "LyraApp/app" ]; then
+            mv LyraApp/app .
+          fi
+          
+          # Force creating clean English configuration files
           echo "include ':app'" > settings.gradle
-          echo "buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:7.4.2' } }" > build.gradle
-          echo "allprojects { repositories { google(); mavenCentral() } }" >> build.gradle
+          
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          EOF
 
-      - name: Reescribir app/build.gradle
+      - name: Build APK
         run: |
-          printf 'apply plugin: "com.android.application"\nandroid {\n  compileSdkVersion 33\n  defaultConfig {\n    applicationId "com.lyra.audiokernel"\n    minSdkVersion 21\n    targetSdkVersion 33\n    versionCode 1\n    versionName "1.0"\n    externalNativeBuild { cmake { cppFlags "-std=c++17" } }\n  }\n  externalNativeBuild { cmake { path "src/main/cpp/CMakeLists.txt" } }\n}\ndependencies {\n  implementation "androidx.appcompat:appcompat:1.6.1"\n}\n' > app/build.gradle
+          gradle wrapper --gradle-version 7.6.1
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Generar Gradle Wrapper
-        run: |
-          gradle wrapper --gradle-version=7.6.1
-          chmod +x ./gradlew
-
-      - name: Compilar APK
-        run: ./gradlew :app:assembleDebug --stacktrace
-
-      - name: Entregar APK
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
           name: Lyra-Audio-Player
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: "**/*.apk"
+
