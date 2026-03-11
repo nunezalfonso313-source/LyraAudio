@@ -14,25 +14,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Overlord Architecture Rebuild
+      - name: Hardened Architecture Rebuild
         run: |
-          # 1. Search for the source code and protect it
+          # Find the source folder wherever it is and move it to a safe place
           SRC_PATH=$(find . -name "src" -type d -not -path "*/app/src/*" | head -n 1)
           mkdir -p ./temp_src
           cp -r "$SRC_PATH"/* ./temp_src/
           
-          # 2. Wipe everything to avoid "Inception" folders
+          # Clean root directory from any ghost folders or corrupt files
           find . -maxdepth 1 -not -name ".github" -not -name "temp_src" -not -name "." -exec rm -rf {} +
           
-          # 3. Create Industrial Structure
+          # Rebuild the app module from scratch
           mkdir -p app/src
           mv ./temp_src/* app/src/
           rm -rf ./temp_src
           
-          # 4. Inject Master Settings
+          # Force root configuration files in plain English
           echo "include ':app'" > settings.gradle
           
-          # 5. Inject Master Root Build
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -43,7 +42,7 @@ jobs:
           }
           EOF
 
-          # 6. Inject Master App Module (The Identity Fix)
+          # Force app module identity (The Master Key)
           cat <<EOF > app/build.gradle
           apply plugin: 'com.android.application'
           android {
@@ -62,14 +61,14 @@ jobs:
           }
           EOF
 
-      - name: Force Compilation
+      - name: Force Master Compilation
         run: |
           gradle wrapper --gradle-version 7.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Deliver APK
+      - name: Delivery
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-Final-Build
+          name: Lyra-APK-Stable
           path: "app/build/outputs/apk/debug/*.apk"
