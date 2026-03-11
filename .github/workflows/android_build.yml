@@ -14,14 +14,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Clean and Repair Structure
+      - name: Forensic Extraction and Repair
         run: |
-          unzip LyraProject.zip -d .
+          # Find any zip file that looks like the project and unzip it
+          ZIP_FILE=$(ls *.zip | grep -i "Lyra" | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: No zip file containing 'Lyra' was found in the root."
+            ls -R
+            exit 1
+          fi
+          unzip "$ZIP_FILE" -d .
+          
+          # Normalize directory structure
           if [ -d "LyraApp/app" ]; then
             mv LyraApp/app .
           fi
           
-          # Force creating clean English configuration files
+          # Ensure English config files exist
           echo "include ':app'" > settings.gradle
           
           cat <<EOF > build.gradle
@@ -45,4 +54,3 @@ jobs:
         with:
           name: Lyra-Audio-Player
           path: "**/*.apk"
-
