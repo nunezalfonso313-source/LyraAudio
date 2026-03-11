@@ -14,12 +14,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS PHANTOM - Isolation Alignment
+      - name: AEGIS NEUTRON - Manifest Sanitization
         run: |
-          # Create a Phantom Isolation Zone
+          # 1. Isolation Zone
           mkdir -p ./phantom_zone/src/main/java
           
-          # Find and Capture the Manifest
+          # 2. Find and Capture Manifest
           MANIFEST_FILE=$(find . -name "AndroidManifest.xml" -not -path "*/.github/*" | head -n 1)
           if [ -n "$MANIFEST_FILE" ]; then
             cp "$MANIFEST_FILE" ./phantom_zone/src/main/
@@ -27,21 +27,23 @@ jobs:
             echo "FATAL: AndroidManifest.xml missing!" && exit 1
           fi
           
-          # Find and Capture the Java Source
+          # 3. CLEANING: Remove the legacy 'package' attribute to avoid conflict
+          # This is the "Neutron" fix
+          sed -i 's/package="[^"]*"//g' ./phantom_zone/src/main/AndroidManifest.xml
+          
+          # 4. Find and Capture Java Source
           JAVA_DIR=$(find . -name "java" -type d -not -path "./app/*" -not -path "./phantom_zone/*" | head -n 1)
           if [ -n "$JAVA_DIR" ]; then
             cp -r "$JAVA_DIR"/* ./phantom_zone/src/main/java/
           fi
           
-          # Nuclear Wipe of Root (Except .github and phantom_zone)
+          # 5. Nuclear Wipe & Restore
           find . -maxdepth 1 -not -name ".github" -not -name "phantom_zone" -not -name "." -exec rm -rf {} +
-          
-          # Restore to final Industrial Structure
           mkdir -p app
           mv ./phantom_zone/* app/
           rm -rf ./phantom_zone
           
-          # Inject Configurations
+          # 6. Inject Master Configurations
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           
@@ -86,5 +88,5 @@ jobs:
       - name: Deliver APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-APK-Final
+          name: Lyra-Final-APK
           path: "app/build/outputs/apk/debug/*.apk"
