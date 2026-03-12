@@ -123,7 +123,7 @@ jobs:
           </LinearLayout>
           EOF
 
-          cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
           import android.content.Intent;
           import android.media.MediaMetadataRetriever;
@@ -256,8 +256,8 @@ jobs:
                           if (name != null && (name.endsWith(".mp3") || name.endsWith(".flac")
                               || name.endsWith(".m4a") || name.endsWith(".ogg"))) {
                               playlist.add(MediaItem.fromUri(file.getUri()));
-                              String display = name.replaceAll("\\.(mp3|flac|m4a|ogg)$", "");
                               String ext = name.substring(name.lastIndexOf(".") + 1).toUpperCase();
+                              String display = name.substring(0, name.lastIndexOf("."));
                               trackNames.add(display);
                               trackFiles.add(file);
                               long sizeKb = file.length() / 1024;
@@ -288,9 +288,8 @@ jobs:
                           mmr.release();
                           if (bitrate != null) {
                               int kbps = Integer.parseInt(bitrate) / 1000;
-                              String ext = trackMetas.get(index).split(" \\| ")[0];
-                              String size = trackMetas.get(index).split(" \\| ")[1];
-                              String meta = ext + " | " + size + " | " + kbps + " kbps";
+                              String currentMeta = trackMetas.get(index);
+                              String meta = currentMeta + " | " + kbps + " kbps";
                               runOnUiThread(() -> trackMeta.setText(meta));
                           }
                       } catch (Exception e) {}
@@ -311,7 +310,7 @@ jobs:
                   if (player != null) player.release();
               }
           }
-          EOF
+          JAVAEOF
 
           cat <<EOF > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
