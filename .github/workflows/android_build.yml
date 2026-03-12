@@ -1,4 +1,4 @@
-name: Build Lyra Final Player
+Build Lyra Final Player
 on: [push]
 
 jobs:
@@ -16,16 +16,13 @@ jobs:
 
       - name: AEGIS - Total Reconstruction & AndroidX Patch
         run: |
-          # 1. Limpieza absoluta para evitar residuos de los 59 intentos previos
           rm -rf *
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
-          
-          # 2. INYECTAR PROPIEDADES (Solución al error de la captura)
+
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
-          
-          # 3. Manifiesto Operativo con Permisos de Audio
+
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -44,7 +41,6 @@ jobs:
           </manifest>
           EOF
 
-          # 4. Interfaz Visual
           cat <<EOF > app/src/main/res/layout/activity_main.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -63,40 +59,47 @@ jobs:
                   android:textSize="22sp"
                   android:layout_marginBottom="40dp"/>
               <Button
-                  android:id="@+id/btn_select"
+                  android:id="@+id/btn_play"
                   android:layout_width="match_parent"
                   android:layout_height="60dp"
-                  android:text="SELECCIONAR MUSICA" />
+                  android:text="PLAY"/>
+              <Button
+                  android:id="@+id/btn_prev"
+                  android:layout_width="match_parent"
+                  android:layout_height="60dp"
+                  android:text="PREVIOUS"/>
+              <Button
+                  android:id="@+id/btn_next"
+                  android:layout_width="match_parent"
+                  android:layout_height="60dp"
+                  android:text="NEXT"/>
           </LinearLayout>
           EOF
 
-          # 5. Código Java Maestro (Selector y Reproductor)
           cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
-          import android.content.Intent;
+          import android.Manifest;
+          import android.content.ContentUris;
+          import android.content.pm.PackageManager;
+          import android.database.Cursor;
           import android.net.Uri;
           import android.os.Bundle;
+          import android.provider.MediaStore;
           import android.widget.Button;
           import android.widget.TextView;
-          import androidx.activity.result.ActivityResultLauncher;
-          import androidx.activity.result.contract.ActivityResultContracts;
           import androidx.appcompat.app.AppCompatActivity;
+          import androidx.core.app.ActivityCompat;
+          import androidx.core.content.ContextCompat;
           import androidx.media3.common.MediaItem;
           import androidx.media3.exoplayer.ExoPlayer;
+          import java.util.ArrayList;
+          import java.util.List;
 
           public class MainActivity extends AppCompatActivity {
               private ExoPlayer player;
               private TextView statusText;
-
-              private final ActivityResultLauncher<Intent> filePickerLauncher = registerForActivityResult(
-                  new ActivityResultContracts.StartActivityForResult(),
-                  result -> {
-                      if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                          Uri uri = result.getData().getData();
-                          startPlayback(uri);
-                      }
-                  }
-              );
+              private List<MediaItem> playlist = new ArrayList<>();
+              private int currentIndex = 0;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -104,21 +107,67 @@ jobs:
                   setContentView(R.layout.activity_main);
                   player = new ExoPlayer.Builder(this).build();
                   statusText = findViewById(R.id.status_text);
-                  Button btnSelect = findViewById(R.id.btn_select);
-                  btnSelect.setOnClickListener(v -> {
-                      Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                      intent.addCategory(Intent.CATEGORY_OPENABLE);
-                      intent.setType("audio/*");
-                      filePickerLauncher.launch(intent);
+                  Button btnPlay = findViewById(R.id.btn_play);
+                  Button btnPrev = findViewById(R.id.btn_prev);
+                  Button btnNext = findViewById(R.id.btn_next);
+
+                  if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                          != PackageManager.PERMISSION_GRANTED) {
+                      ActivityCompat.requestPermissions(this,
+                          new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
+                  } else {
+                      loadLibrary();
+                  }
+
+                  btnPlay.setOnClickListener(v -> {
+                      if (!playlist.isEmpty()) playAt(currentIndex);
+                  });
+                  btnNext.setOnClickListener(v -> {
+                      if (currentIndex < playlist.size() - 1) {
+                          currentIndex++;
+                          playAt(currentIndex);
+                      }
+                  });
+                  btnPrev.setOnClickListener(v -> {
+                      if (currentIndex > 0) {
+                          currentIndex--;
+                          playAt(currentIndex);
+                      }
                   });
               }
 
-              private void startPlayback(Uri uri) {
-                  MediaItem mediaItem = MediaItem.fromUri(uri);
-                  player.setMediaItem(mediaItem);
+              private void loadLibrary() {
+                  String[] projection = {MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE};
+                  String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
+                  Cursor cursor = getContentResolver().query(
+                      MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                      projection, selection, null,
+                      MediaStore.Audio.Media.TITLE + " ASC");
+                  if (cursor != null) {
+                      while (cursor.moveToNext()) {
+                          long id = cursor.getLong(0);
+                          Uri uri = ContentUris.withAppendedId(
+                              MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
+                          playlist.add(MediaItem.fromUri(uri));
+                      }
+                      cursor.close();
+                  }
+                  statusText.setText("LIBRARY: " + playlist.size() + " tracks");
+              }
+
+              private void playAt(int index) {
+                  player.setMediaItem(playlist.get(index));
                   player.prepare();
                   player.play();
-                  statusText.setText("REPRODUCIENDO...");
+                  statusText.setText("Track " + (index + 1) + " of " + playlist.size());
+              }
+
+              @Override
+              public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+                  super.onRequestPermissionsResult(requestCode, permissions, results);
+                  if (requestCode == 1 && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
+                      loadLibrary();
+                  }
               }
 
               @Override
@@ -129,7 +178,6 @@ jobs:
           }
           EOF
 
-          # 6. Configuración de Gradle (Blindada)
           cat <<EOF > settings.gradle
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
@@ -139,7 +187,7 @@ jobs:
           rootProject.name = 'LyraAudio'
           include ':app'
           EOF
-          
+
           echo "buildscript { repositories { google(); mavenCentral() } }" > build.gradle
 
           cat <<EOF > app/build.gradle
