@@ -1,3 +1,4 @@
+
 name: Build Lyra Final Player
 on: [push]
 
@@ -14,7 +15,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - Bloque 1 + Notificacion + Persistencia
+      - name: AEGIS - Bloque 1 + Notificacion 3 Botones + Persistencia
         run: |
           find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
           mkdir -p app/src/main/java/com/lyra/audiokernel
@@ -388,6 +389,7 @@ jobs:
 
           cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
           package com.lyra.audiokernel;
+          import androidx.media3.common.Player;
           import androidx.media3.exoplayer.ExoPlayer;
           import androidx.media3.session.MediaSession;
           import androidx.media3.session.MediaSessionService;
@@ -397,7 +399,26 @@ jobs:
               public void onCreate() {
                   super.onCreate();
                   ExoPlayer player = new ExoPlayer.Builder(this).build();
-                  mediaSession = new MediaSession.Builder(this, player).build();
+                  mediaSession = new MediaSession.Builder(this, player)
+                      .setCallback(new MediaSession.Callback() {
+                          @Override
+                          public MediaSession.ConnectionResult onConnect(
+                                  MediaSession session,
+                                  MediaSession.ControllerInfo controller) {
+                              MediaSession.ConnectionResult result =
+                                  MediaSession.Callback.super.onConnect(session, controller);
+                              return MediaSession.ConnectionResult.accept(
+                                  result.availableSessionCommands,
+                                  new Player.Commands.Builder()
+                                      .addAll(result.availablePlayerCommands)
+                                      .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
+                                      .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                                      .add(Player.COMMAND_PLAY_PAUSE)
+                                      .build()
+                              );
+                          }
+                      })
+                      .build();
               }
               @Override
               public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
@@ -694,8 +715,8 @@ jobs:
                   applicationId 'com.lyra.audiokernel'
                   minSdk 24
                   targetSdk 34
-                  versionCode 3
-                  versionName '1.2'
+                  versionCode 4
+                  versionName '1.3'
               }
           }
           dependencies {
@@ -714,8 +735,8 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Deliver Lyra v1.2
+      - name: Deliver Lyra v1.3
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-v1.2-Notificacion-Persistencia
+          name: Lyra-v1.3-3Botones
           path: "app/build/outputs/apk/debug/*.apk"
