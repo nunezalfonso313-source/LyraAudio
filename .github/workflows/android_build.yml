@@ -15,12 +15,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - Bloque 1 Visual & Playlist
+      - name: AEGIS - Bloque 1 + Bloque 2 System
         run: |
           rm -rf *
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/xml
 
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
@@ -29,6 +30,11 @@ jobs:
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <uses-permission android:name="android.permission.BLUETOOTH" />
+              <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
               <application
                   android:allowBackup="true"
                   android:label="Lyra Player"
@@ -39,6 +45,14 @@ jobs:
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                   </activity>
+                  <service
+                      android:name="com.lyra.audiokernel.LyraPlaybackService"
+                      android:foregroundServiceType="mediaPlayback"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="androidx.media3.session.MediaSessionService" />
+                      </intent-filter>
+                  </service>
               </application>
           </manifest>
           EOF
@@ -51,7 +65,6 @@ jobs:
               android:orientation="vertical"
               android:background="#0A0A0A">
 
-              <!-- PLAYER PANEL -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
@@ -116,7 +129,6 @@ jobs:
                   </LinearLayout>
               </LinearLayout>
 
-              <!-- SEEKBAR -->
               <SeekBar
                   android:id="@+id/seek_bar"
                   android:layout_width="match_parent"
@@ -161,7 +173,6 @@ jobs:
                       android:gravity="end"/>
               </LinearLayout>
 
-              <!-- CONTROLES -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="56dp"
@@ -230,21 +241,91 @@ jobs:
                       android:padding="0dp"/>
               </LinearLayout>
 
-              <!-- BOTÓN CARPETA -->
-              <Button
-                  android:id="@+id/btn_select"
+              <!-- ECUALIZADOR -->
+              <LinearLayout
+                  android:id="@+id/eq_panel"
                   android:layout_width="match_parent"
-                  android:layout_height="40dp"
-                  android:text="📂  SELECCIONAR CARPETA"
-                  android:textColor="#000000"
-                  android:textSize="13sp"
-                  android:backgroundTint="#00FF00"
-                  android:layout_marginStart="12dp"
-                  android:layout_marginEnd="12dp"
-                  android:layout_marginTop="6dp"
-                  android:layout_marginBottom="6dp"/>
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:background="#0D0D0D"
+                  android:paddingStart="12dp"
+                  android:paddingEnd="12dp"
+                  android:paddingBottom="6dp"
+                  android:visibility="gone">
 
-              <!-- PLAYLIST -->
+                  <TextView
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text="ECUALIZADOR"
+                      android:textColor="#444444"
+                      android:textSize="10sp"
+                      android:paddingTop="6dp"
+                      android:paddingBottom="4dp"
+                      android:letterSpacing="0.15"/>
+
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                      <TextView android:layout_width="36dp" android:layout_height="wrap_content" android:text="60Hz" android:textColor="#555555" android:textSize="10sp"/>
+                      <SeekBar android:id="@+id/eq_band0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                      <TextView android:id="@+id/eq_val0" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                  </LinearLayout>
+
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                      <TextView android:layout_width="36dp" android:layout_height="wrap_content" android:text="230Hz" android:textColor="#555555" android:textSize="10sp"/>
+                      <SeekBar android:id="@+id/eq_band1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                      <TextView android:id="@+id/eq_val1" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                  </LinearLayout>
+
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                      <TextView android:layout_width="36dp" android:layout_height="wrap_content" android:text="910Hz" android:textColor="#555555" android:textSize="10sp"/>
+                      <SeekBar android:id="@+id/eq_band2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                      <TextView android:id="@+id/eq_val2" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                  </LinearLayout>
+
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                      <TextView android:layout_width="36dp" android:layout_height="wrap_content" android:text="3.6kHz" android:textColor="#555555" android:textSize="10sp"/>
+                      <SeekBar android:id="@+id/eq_band3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                      <TextView android:id="@+id/eq_val3" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                  </LinearLayout>
+
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                      <TextView android:layout_width="36dp" android:layout_height="wrap_content" android:text="14kHz" android:textColor="#555555" android:textSize="10sp"/>
+                      <SeekBar android:id="@+id/eq_band4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                      <TextView android:id="@+id/eq_val4" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                  </LinearLayout>
+              </LinearLayout>
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:paddingStart="12dp"
+                  android:paddingEnd="12dp"
+                  android:paddingTop="6dp"
+                  android:paddingBottom="6dp">
+
+                  <Button
+                      android:id="@+id/btn_select"
+                      android:layout_width="0dp"
+                      android:layout_height="40dp"
+                      android:layout_weight="1"
+                      android:layout_marginEnd="4dp"
+                      android:text="📂 CARPETA"
+                      android:textColor="#000000"
+                      android:textSize="12sp"
+                      android:backgroundTint="#00FF00"/>
+
+                  <Button
+                      android:id="@+id/btn_eq"
+                      android:layout_width="0dp"
+                      android:layout_height="40dp"
+                      android:layout_weight="1"
+                      android:layout_marginStart="4dp"
+                      android:text="🎚 EQ"
+                      android:textColor="#FFFFFF"
+                      android:textSize="12sp"
+                      android:backgroundTint="#1A1A1A"/>
+              </LinearLayout>
+
               <TextView
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
@@ -414,18 +495,53 @@ jobs:
           }
           JAVAEOF
 
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
+          package com.lyra.audiokernel;
+          import androidx.media3.exoplayer.ExoPlayer;
+          import androidx.media3.session.MediaSession;
+          import androidx.media3.session.MediaSessionService;
+
+          public class LyraPlaybackService extends MediaSessionService {
+              private MediaSession mediaSession;
+
+              @Override
+              public void onCreate() {
+                  super.onCreate();
+                  ExoPlayer player = new ExoPlayer.Builder(this).build();
+                  mediaSession = new MediaSession.Builder(this, player).build();
+              }
+
+              @Override
+              public MediaSession onGetSession(MediaSession.ControllerInfo controllerInfo) {
+                  return mediaSession;
+              }
+
+              @Override
+              public void onDestroy() {
+                  mediaSession.getPlayer().release();
+                  mediaSession.release();
+                  super.onDestroy();
+              }
+          }
+          JAVAEOF
+
           cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
+          import android.content.ComponentName;
           import android.content.Intent;
           import android.graphics.Bitmap;
           import android.graphics.BitmapFactory;
+          import android.media.AudioManager;
           import android.media.MediaMetadataRetriever;
+          import android.media.audiofx.Equalizer;
           import android.net.Uri;
           import android.os.Bundle;
           import android.os.Handler;
           import android.os.Looper;
+          import android.view.View;
           import android.widget.Button;
           import android.widget.ImageView;
+          import android.widget.LinearLayout;
           import android.widget.ListView;
           import android.widget.SeekBar;
           import android.widget.TextView;
@@ -434,37 +550,51 @@ jobs:
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.documentfile.provider.DocumentFile;
           import androidx.media3.common.MediaItem;
+          import androidx.media3.common.MediaMetadata;
           import androidx.media3.common.Player;
-          import androidx.media3.exoplayer.ExoPlayer;
+          import androidx.media3.session.MediaController;
+          import androidx.media3.session.SessionToken;
+          import com.google.common.util.concurrent.ListenableFuture;
+          import com.google.common.util.concurrent.MoreExecutors;
           import java.util.ArrayList;
           import java.util.Collections;
           import java.util.List;
           import java.util.Locale;
 
           public class MainActivity extends AppCompatActivity {
-              private ExoPlayer player;
+              private MediaController mediaController;
+              private ListenableFuture<MediaController> controllerFuture;
+
               private ImageView albumArt;
               private TextView trackTitle, trackArtist, trackAlbum, trackMeta;
               private TextView trackNumber, timeCurrent, timeTotal;
               private SeekBar seekBar;
               private ListView playlistView;
-              private Button btnPlay, btnShuffle, btnRepeat;
+              private Button btnPlay, btnShuffle, btnRepeat, btnEq;
+              private LinearLayout eqPanel;
+              private SeekBar[] eqBands = new SeekBar[5];
+              private TextView[] eqVals = new TextView[5];
 
               private List<TrackInfo> tracks = new ArrayList<>();
-              private List<Integer> playOrder = new ArrayList<>();
               private int currentIndex = 0;
               private boolean isShuffled = false;
-              private int repeatMode = 0; // 0=off, 1=all, 2=one
-              private boolean isPlaying = false;
+              private int repeatMode = 0;
+              private Equalizer equalizer;
+              private boolean eqVisible = false;
 
               private TrackAdapter adapter;
               private final Handler handler = new Handler(Looper.getMainLooper());
 
+              // Persistencia
+              private static final String PREFS = "lyra_prefs";
+              private static final String KEY_FOLDER = "last_folder";
+              private static final String KEY_INDEX = "last_index";
+
               private final Runnable updateProgress = new Runnable() {
                   @Override public void run() {
-                      if (player != null && player.isPlaying()) {
-                          long cur = player.getCurrentPosition();
-                          long tot = player.getDuration();
+                      if (mediaController != null && mediaController.isPlaying()) {
+                          long cur = mediaController.getCurrentPosition();
+                          long tot = mediaController.getDuration();
                           if (tot > 0) {
                               seekBar.setMax((int) tot);
                               seekBar.setProgress((int) cur);
@@ -482,6 +612,8 @@ jobs:
                       if (uri != null) {
                           getContentResolver().takePersistableUriPermission(uri,
                               Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                              .putString(KEY_FOLDER, uri.toString()).apply();
                           loadFolder(uri);
                       }
                   }
@@ -492,7 +624,6 @@ jobs:
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
 
-                  player = new ExoPlayer.Builder(this).build();
                   albumArt    = findViewById(R.id.album_art);
                   trackTitle  = findViewById(R.id.track_title);
                   trackArtist = findViewById(R.id.track_artist);
@@ -506,28 +637,34 @@ jobs:
                   btnPlay     = findViewById(R.id.btn_play);
                   btnShuffle  = findViewById(R.id.btn_shuffle);
                   btnRepeat   = findViewById(R.id.btn_repeat);
-                  Button btnPrev   = findViewById(R.id.btn_prev);
-                  Button btnNext   = findViewById(R.id.btn_next);
-                  Button btnSelect = findViewById(R.id.btn_select);
+                  btnEq       = findViewById(R.id.btn_eq);
+                  eqPanel     = findViewById(R.id.eq_panel);
+
+                  int[] bandIds = {R.id.eq_band0, R.id.eq_band1, R.id.eq_band2, R.id.eq_band3, R.id.eq_band4};
+                  int[] valIds  = {R.id.eq_val0,  R.id.eq_val1,  R.id.eq_val2,  R.id.eq_val3,  R.id.eq_val4};
+                  for (int i = 0; i < 5; i++) {
+                      eqBands[i] = findViewById(bandIds[i]);
+                      eqVals[i]  = findViewById(valIds[i]);
+                      final int band = i;
+                      eqBands[i].setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                          @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
+                              if (fromUser && equalizer != null) {
+                                  int db = p - 10;
+                                  eqVals[band].setText((db > 0 ? "+" : "") + db + "dB");
+                                  equalizer.setBandLevel((short) band, (short) (db * 100));
+                              }
+                          }
+                          @Override public void onStartTrackingTouch(SeekBar sb) {}
+                          @Override public void onStopTrackingTouch(SeekBar sb) {}
+                      });
+                  }
 
                   adapter = new TrackAdapter(this, tracks);
                   playlistView.setAdapter(adapter);
 
-                  player.addListener(new Player.Listener() {
-                      @Override
-                      public void onPlaybackStateChanged(int state) {
-                          if (state == Player.STATE_ENDED) advanceTrack(1);
-                      }
-                      @Override
-                      public void onIsPlayingChanged(boolean playing) {
-                          isPlaying = playing;
-                          btnPlay.setText(playing ? "⏸" : "▶");
-                      }
-                  });
-
                   seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                       @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
-                          if (fromUser) player.seekTo(p);
+                          if (fromUser && mediaController != null) mediaController.seekTo(p);
                       }
                       @Override public void onStartTrackingTouch(SeekBar sb) {}
                       @Override public void onStopTrackingTouch(SeekBar sb) {}
@@ -538,30 +675,65 @@ jobs:
                       playAt(currentIndex);
                   });
 
-                  btnSelect.setOnClickListener(v -> folderPicker.launch(null));
+                  findViewById(R.id.btn_select).setOnClickListener(v -> folderPicker.launch(null));
                   btnPlay.setOnClickListener(v -> {
-                      if (player.isPlaying()) { player.pause(); }
-                      else { player.play(); }
+                      if (mediaController == null) return;
+                      if (mediaController.isPlaying()) mediaController.pause();
+                      else mediaController.play();
                   });
-                  btnPrev.setOnClickListener(v -> advanceTrack(-1));
-                  btnNext.setOnClickListener(v -> advanceTrack(1));
+                  findViewById(R.id.btn_prev).setOnClickListener(v -> advanceTrack(-1));
+                  findViewById(R.id.btn_next).setOnClickListener(v -> advanceTrack(1));
                   btnShuffle.setOnClickListener(v -> toggleShuffle());
                   btnRepeat.setOnClickListener(v -> cycleRepeat());
+                  btnEq.setOnClickListener(v -> {
+                      eqVisible = !eqVisible;
+                      eqPanel.setVisibility(eqVisible ? View.VISIBLE : View.GONE);
+                      btnEq.setTextColor(eqVisible
+                          ? android.graphics.Color.parseColor("#00FF00")
+                          : android.graphics.Color.WHITE);
+                  });
+
+                  // Conectar al servicio
+                  SessionToken token = new SessionToken(this,
+                      new ComponentName(this, LyraPlaybackService.class));
+                  controllerFuture = MediaController.Builder(this, token).buildAsync();
+                  controllerFuture.addListener(() -> {
+                      try {
+                          mediaController = controllerFuture.get();
+                          mediaController.addListener(new Player.Listener() {
+                              @Override
+                              public void onIsPlayingChanged(boolean playing) {
+                                  btnPlay.setText(playing ? "⏸" : "▶");
+                              }
+                              @Override
+                              public void onPlaybackStateChanged(int state) {
+                                  if (state == Player.STATE_ENDED) advanceTrack(1);
+                              }
+                          });
+                          // Restaurar última carpeta
+                          String saved = getSharedPreferences(PREFS, MODE_PRIVATE)
+                              .getString(KEY_FOLDER, null);
+                          if (saved != null) loadFolder(Uri.parse(saved));
+                      } catch (Exception e) {
+                          trackTitle.setText("Error al conectar servicio");
+                      }
+                  }, MoreExecutors.directExecutor());
 
                   handler.post(updateProgress);
               }
 
               private void loadFolder(Uri treeUri) {
                   tracks.clear();
-                  playOrder.clear();
                   currentIndex = 0;
                   DocumentFile folder = DocumentFile.fromTreeUri(this, treeUri);
                   if (folder != null) scanFolder(folder);
-                  for (int i = 0; i < tracks.size(); i++) playOrder.add(i);
                   adapter.notifyDataSetChanged();
                   if (!tracks.isEmpty()) {
+                      int savedIndex = getSharedPreferences(PREFS, MODE_PRIVATE)
+                          .getInt(KEY_INDEX, 0);
+                      currentIndex = Math.min(savedIndex, tracks.size() - 1);
                       trackNumber.setText("LIBRERÍA: " + tracks.size() + " pistas");
-                      playAt(0);
+                      playAt(currentIndex);
                   } else {
                       trackTitle.setText("Sin archivos de audio");
                   }
@@ -580,175 +752,55 @@ jobs:
                       String display = name.substring(0, name.lastIndexOf("."));
                       long sizeKb = file.length() / 1024;
                       String meta = ext + " | " + String.format(Locale.US, "%.1f MB", sizeKb / 1024.0);
-
-                      // Leer tags ID3
                       String title = display, artist = "", album = "", duration = "";
                       Bitmap art = null;
+
                       try {
                           MediaMetadataRetriever mmr = new MediaMetadataRetriever();
                           mmr.setDataSource(getApplicationContext(), file.getUri());
-                          String t = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+                          String t  = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
                           String ar = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
                           String al = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
-                          String dur = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                          String dur= mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
                           String br = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
                           byte[] artBytes = mmr.getEmbeddedPicture();
                           mmr.release();
-                          if (t != null && !t.isEmpty()) title = t;
+                          if (t  != null && !t.isEmpty()) title = t;
                           if (ar != null) artist = ar;
                           if (al != null) album = al;
-                          if (dur != null) {
-                              long ms = Long.parseLong(dur);
-                              duration = formatTime(ms);
-                          }
+                          if (dur != null) duration = formatTime(Long.parseLong(dur));
                           if (br != null) {
                               int kbps = Integer.parseInt(br) / 1000;
                               meta = ext + " | " + kbps + " kbps | "
                                   + String.format(Locale.US, "%.1f MB", sizeKb / 1024.0);
                           }
-                          if (artBytes != null) {
+                          if (artBytes != null)
                               art = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.length);
-                          }
                       } catch (Exception ignored) {}
 
-                      tracks.add(new TrackInfo(
-                          MediaItem.fromUri(file.getUri()),
-                          title, artist, album, meta, duration, art, file.getUri()
-                      ));
+                      tracks.add(new TrackInfo(MediaItem.fromUri(file.getUri()),
+                          title, artist, album, meta, duration, art, file.getUri()));
                   }
               }
 
               private void playAt(int index) {
-                  if (index < 0 || index >= tracks.size()) return;
+                  if (index < 0 || index >= tracks.size() || mediaController == null) return;
                   currentIndex = index;
                   TrackInfo t = tracks.get(index);
-                  player.stop();
-                  player.setMediaItem(t.mediaItem);
-                  player.prepare();
-                  player.play();
+
+                  mediaController.setMediaItem(t.mediaItem);
+                  mediaController.prepare();
+                  mediaController.play();
+
+                  // Persistir índice
+                  getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                      .putInt(KEY_INDEX, index).apply();
 
                   trackTitle.setText(t.title);
                   trackArtist.setText(t.artist.isEmpty() ? "Artista desconocido" : t.artist);
-                  trackAlbum.setText(t.album.isEmpty() ? "" : t.album);
+                  trackAlbum.setText(t.album);
                   trackMeta.setText(t.meta);
                   trackNumber.setText((index + 1) + " / " + tracks.size());
                   timeCurrent.setText("0:00");
                   timeTotal.setText(t.duration.isEmpty() ? "0:00" : t.duration);
-                  seekBar.setProgress(0);
-
-                  if (t.albumArt != null) {
-                      albumArt.setImageBitmap(t.albumArt);
-                  } else {
-                      albumArt.setImageResource(android.R.drawable.ic_media_play);
-                  }
-
-                  adapter.setCurrentIndex(index);
-                  playlistView.smoothScrollToPosition(index);
-              }
-
-              private void advanceTrack(int direction) {
-                  if (tracks.isEmpty()) return;
-                  if (repeatMode == 2) { playAt(currentIndex); return; }
-                  int next = currentIndex + direction;
-                  if (next >= tracks.size()) {
-                      if (repeatMode == 1) next = 0;
-                      else return;
-                  }
-                  if (next < 0) {
-                      if (repeatMode == 1) next = tracks.size() - 1;
-                      else return;
-                  }
-                  playAt(next);
-              }
-
-              private void toggleShuffle() {
-                  isShuffled = !isShuffled;
-                  btnShuffle.setTextColor(isShuffled
-                      ? android.graphics.Color.parseColor("#00FF00")
-                      : android.graphics.Color.parseColor("#555555"));
-                  if (isShuffled) {
-                      Collections.shuffle(playOrder);
-                  } else {
-                      playOrder.clear();
-                      for (int i = 0; i < tracks.size(); i++) playOrder.add(i);
-                  }
-              }
-
-              private void cycleRepeat() {
-                  repeatMode = (repeatMode + 1) % 3;
-                  switch (repeatMode) {
-                      case 0:
-                          btnRepeat.setText("↺");
-                          btnRepeat.setTextColor(android.graphics.Color.parseColor("#555555"));
-                          break;
-                      case 1:
-                          btnRepeat.setText("↺");
-                          btnRepeat.setTextColor(android.graphics.Color.parseColor("#00FF00"));
-                          break;
-                      case 2:
-                          btnRepeat.setText("↻");
-                          btnRepeat.setTextColor(android.graphics.Color.parseColor("#00BFFF"));
-                          break;
-                  }
-              }
-
-              private String formatTime(long ms) {
-                  long s = ms / 1000;
-                  return String.format(Locale.US, "%d:%02d", s / 60, s % 60);
-              }
-
-              @Override
-              protected void onDestroy() {
-                  super.onDestroy();
-                  handler.removeCallbacks(updateProgress);
-                  if (player != null) player.release();
-              }
-          }
-          JAVAEOF
-
-          cat <<EOF > settings.gradle
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
-          }
-          rootProject.name = 'LyraAudio'
-          include ':app'
-          EOF
-
-          echo "buildscript { repositories { google(); mavenCentral() } }" > build.gradle
-
-          cat <<EOF > app/build.gradle
-          plugins { id 'com.android.application' version '8.2.0' }
-          android {
-              namespace 'com.lyra.audiokernel'
-              compileSdk 34
-              defaultConfig {
-                  applicationId 'com.lyra.audiokernel'
-                  minSdk 24
-                  targetSdk 34
-                  versionCode 2
-                  versionName '1.1'
-              }
-          }
-          dependencies {
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'androidx.documentfile:documentfile:1.0.1'
-              implementation 'androidx.media3:media3-exoplayer:1.2.0'
-              implementation 'androidx.media3:media3-common:1.2.0'
-          }
-          EOF
-
-      - name: Master Compilation
-        run: |
-          gradle wrapper --gradle-version 8.5
-          chmod +x gradlew
-          ./gradlew :app:assembleDebug --stacktrace
-
-      - name: Deliver Lyra Bloque 1
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lyra-Bloque1-Visual
-          path: "app/build/outputs/apk/debug/*.apk"
-
-
+      
