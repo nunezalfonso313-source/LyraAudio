@@ -505,7 +505,8 @@ jobs:
               android:paddingStart="16dp"
               android:paddingEnd="16dp"
               android:gravity="center_vertical"
-              android:background="@android:color/transparent">
+              android:background="@android:color/transparent"
+              android:descendantFocusability="blocksDescendants">
               <TextView
                   android:id="@+id/item_number"
                   android:layout_width="28dp"
