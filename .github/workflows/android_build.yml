@@ -737,9 +737,7 @@ jobs:
           }
           JAVAEOF
 
-          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokern
-          
-/MainActivity.java
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
           import android.Manifest;
           import android.content.ComponentName;
