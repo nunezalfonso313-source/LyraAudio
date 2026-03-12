@@ -51,13 +51,60 @@ jobs:
               android:background="#000000"
               android:padding="20dp">
               <TextView
-                  android:id="@+id/status_text"
+                  android:id="@+id/track_number"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
                   android:text="LYRA SYSTEM READY"
                   android:textColor="#00FF00"
-                  android:textSize="22sp"
-                  android:layout_marginBottom="40dp"/>
+                  android:textSize="16sp"
+                  android:layout_marginBottom="8dp"/>
+              <TextView
+                  android:id="@+id/track_name"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:text=""
+                  android:textColor="#FFFFFF"
+                  android:textSize="20sp"
+                  android:gravity="center"
+                  android:ellipsize="marquee"
+                  android:singleLine="true"
+                  android:layout_marginBottom="8dp"/>
+              <TextView
+                  android:id="@+id/track_meta"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text=""
+                  android:textColor="#00BFFF"
+                  android:textSize="13sp"
+                  android:layout_marginBottom="12dp"/>
+              <SeekBar
+                  android:id="@+id/seek_bar"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:layout_marginBottom="4dp"/>
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:layout_marginBottom="24dp">
+                  <TextView
+                      android:id="@+id/time_current"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="0:00"
+                      android:textColor="#00FF00"
+                      android:textSize="13sp"/>
+                  <TextView
+                      android:id="@+id/time_total"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text="0:00"
+                      android:textColor="#00FF00"
+                      android:textSize="13sp"
+                      android:gravity="end"/>
+              </LinearLayout>
               <Button
                   android:id="@+id/btn_select"
                   android:layout_width="match_parent"
@@ -79,9 +126,13 @@ jobs:
           cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
           import android.content.Intent;
+          import android.media.MediaMetadataRetriever;
           import android.net.Uri;
           import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.Looper;
           import android.widget.Button;
+          import android.widget.SeekBar;
           import android.widget.TextView;
           import androidx.activity.result.ActivityResultLauncher;
           import androidx.activity.result.contract.ActivityResultContracts;
@@ -92,12 +143,35 @@ jobs:
           import androidx.media3.exoplayer.ExoPlayer;
           import java.util.ArrayList;
           import java.util.List;
+          import java.util.Locale;
 
           public class MainActivity extends AppCompatActivity {
               private ExoPlayer player;
-              private TextView statusText;
+              private TextView trackNumber, trackName, trackMeta, timeCurrent, timeTotal;
+              private SeekBar seekBar;
               private List<MediaItem> playlist = new ArrayList<>();
+              private List<String> trackNames = new ArrayList<>();
+              private List<String> trackMetas = new ArrayList<>();
+              private List<DocumentFile> trackFiles = new ArrayList<>();
               private int currentIndex = 0;
+              private final Handler handler = new Handler(Looper.getMainLooper());
+
+              private final Runnable updateProgress = new Runnable() {
+                  @Override
+                  public void run() {
+                      if (player != null && player.isPlaying()) {
+                          long current = player.getCurrentPosition();
+                          long total = player.getDuration();
+                          if (total > 0) {
+                              seekBar.setMax((int) total);
+                              seekBar.setProgress((int) current);
+                              timeCurrent.setText(formatTime(current));
+                              timeTotal.setText(formatTime(total));
+                          }
+                      }
+                      handler.postDelayed(this, 500);
+                  }
+              };
 
               private final ActivityResultLauncher<Uri> folderPickerLauncher = registerForActivityResult(
                   new ActivityResultContracts.OpenDocumentTree(),
@@ -115,7 +189,12 @@ jobs:
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
                   player = new ExoPlayer.Builder(this).build();
-                  statusText = findViewById(R.id.status_text);
+                  trackNumber = findViewById(R.id.track_number);
+                  trackName = findViewById(R.id.track_name);
+                  trackMeta = findViewById(R.id.track_meta);
+                  timeCurrent = findViewById(R.id.time_current);
+                  timeTotal = findViewById(R.id.time_total);
+                  seekBar = findViewById(R.id.seek_bar);
                   Button btnSelect = findViewById(R.id.btn_select);
                   Button btnPrev = findViewById(R.id.btn_prev);
                   Button btnNext = findViewById(R.id.btn_next);
@@ -132,35 +211,39 @@ jobs:
                       }
                   });
 
+                  seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                      @Override
+                      public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
+                          if (fromUser) player.seekTo(progress);
+                      }
+                      @Override public void onStartTrackingTouch(SeekBar sb) {}
+                      @Override public void onStopTrackingTouch(SeekBar sb) {}
+                  });
+
                   btnSelect.setOnClickListener(v -> folderPickerLauncher.launch(null));
-
                   btnNext.setOnClickListener(v -> {
-                      if (currentIndex < playlist.size() - 1) {
-                          currentIndex++;
-                          playAt(currentIndex);
-                      }
+                      if (currentIndex < playlist.size() - 1) { currentIndex++; playAt(currentIndex); }
+                  });
+                  btnPrev.setOnClickListener(v -> {
+                      if (currentIndex > 0) { currentIndex--; playAt(currentIndex); }
                   });
 
-                  btnPrev.setOnClickListener(v -> {
-                      if (currentIndex > 0) {
-                          currentIndex--;
-                          playAt(currentIndex);
-                      }
-                  });
+                  handler.post(updateProgress);
               }
 
               private void loadFromFolder(Uri treeUri) {
                   playlist.clear();
+                  trackNames.clear();
+                  trackMetas.clear();
+                  trackFiles.clear();
                   currentIndex = 0;
                   DocumentFile folder = DocumentFile.fromTreeUri(this, treeUri);
-                  if (folder != null) {
-                      scanFolder(folder);
-                  }
+                  if (folder != null) scanFolder(folder);
                   if (!playlist.isEmpty()) {
-                      statusText.setText("LIBRARY: " + playlist.size() + " tracks");
+                      trackNumber.setText("LIBRARY: " + playlist.size() + " tracks");
                       playAt(0);
                   } else {
-                      statusText.setText("NO AUDIO FILES FOUND");
+                      trackNumber.setText("NO AUDIO FILES FOUND");
                   }
               }
 
@@ -173,6 +256,13 @@ jobs:
                           if (name != null && (name.endsWith(".mp3") || name.endsWith(".flac")
                               || name.endsWith(".m4a") || name.endsWith(".ogg"))) {
                               playlist.add(MediaItem.fromUri(file.getUri()));
+                              String display = name.replaceAll("\\.(mp3|flac|m4a|ogg)$", "");
+                              String ext = name.substring(name.lastIndexOf(".") + 1).toUpperCase();
+                              trackNames.add(display);
+                              trackFiles.add(file);
+                              long sizeKb = file.length() / 1024;
+                              String sizeMb = String.format(Locale.US, "%.1f MB", sizeKb / 1024.0);
+                              trackMetas.add(ext + " | " + sizeMb);
                           }
                       }
                   }
@@ -183,12 +273,41 @@ jobs:
                   player.setMediaItem(playlist.get(index));
                   player.prepare();
                   player.play();
-                  statusText.setText("Track " + (index + 1) + " of " + playlist.size());
+                  trackNumber.setText("Track " + (index + 1) + " of " + playlist.size());
+                  trackName.setText(trackNames.get(index));
+                  trackMeta.setText(trackMetas.get(index));
+                  timeCurrent.setText("0:00");
+                  timeTotal.setText("0:00");
+                  seekBar.setProgress(0);
+
+                  new Thread(() -> {
+                      try {
+                          MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                          mmr.setDataSource(getApplicationContext(), trackFiles.get(index).getUri());
+                          String bitrate = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+                          mmr.release();
+                          if (bitrate != null) {
+                              int kbps = Integer.parseInt(bitrate) / 1000;
+                              String ext = trackMetas.get(index).split(" \\| ")[0];
+                              String size = trackMetas.get(index).split(" \\| ")[1];
+                              String meta = ext + " | " + size + " | " + kbps + " kbps";
+                              runOnUiThread(() -> trackMeta.setText(meta));
+                          }
+                      } catch (Exception e) {}
+                  }).start();
+              }
+
+              private String formatTime(long ms) {
+                  long seconds = ms / 1000;
+                  long minutes = seconds / 60;
+                  seconds = seconds % 60;
+                  return String.format(Locale.US, "%d:%02d", minutes, seconds);
               }
 
               @Override
               protected void onDestroy() {
                   super.onDestroy();
+                  handler.removeCallbacks(updateProgress);
                   if (player != null) player.release();
               }
           }
