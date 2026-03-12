@@ -1,6 +1,5 @@
-Build Lyra Final Player
+name: Build Lyra Final Player
 on: [push]
-
 jobs:
   build:
     runs-on: ubuntu-latest
