@@ -17,7 +17,7 @@ jobs:
 
       - name: AEGIS - Bloque 1 + Bloque 2 System
         run: |
-          rm -rf *
+          find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/drawable
@@ -803,4 +803,106 @@ jobs:
                   trackNumber.setText((index + 1) + " / " + tracks.size());
                   timeCurrent.setText("0:00");
                   timeTotal.setText(t.duration.isEmpty() ? "0:00" : t.duration);
-      
+                  seekBar.setProgress(0);
+
+                  albumArt.setImageResource(android.R.drawable.ic_media_play);
+                  if (t.albumArt != null) albumArt.setImageBitmap(t.albumArt);
+
+                  adapter.setCurrentIndex(index);
+                  playlistView.smoothScrollToPosition(index);
+
+                  // Inicializar ecualizador con la sesión de audio
+                  try {
+                      if (equalizer != null) equalizer.release();
+                      int sessionId = ((ExoPlayerWrapper) mediaController).getAudioSessionId();
+                      equalizer = new Equalizer(0, sessionId);
+                      equalizer.setEnabled(true);
+                  } catch (Exception ignored) {}
+              }
+
+              private void advanceTrack(int direction) {
+                  if (tracks.isEmpty()) return;
+                  if (repeatMode == 2) { playAt(currentIndex); return; }
+                  int next = currentIndex + direction;
+                  if (next >= tracks.size()) next = repeatMode == 1 ? 0 : -1;
+                  if (next < 0) next = repeatMode == 1 ? tracks.size() - 1 : -1;
+                  if (next >= 0) playAt(next);
+              }
+
+              private void toggleShuffle() {
+                  isShuffled = !isShuffled;
+                  btnShuffle.setTextColor(isShuffled
+                      ? android.graphics.Color.parseColor("#00FF00")
+                      : android.graphics.Color.parseColor("#555555"));
+              }
+
+              private void cycleRepeat() {
+                  repeatMode = (repeatMode + 1) % 3;
+                  switch (repeatMode) {
+                      case 0: btnRepeat.setText("↺"); btnRepeat.setTextColor(android.graphics.Color.parseColor("#555555")); break;
+                      case 1: btnRepeat.setText("↺"); btnRepeat.setTextColor(android.graphics.Color.parseColor("#00FF00")); break;
+                      case 2: btnRepeat.setText("↻"); btnRepeat.setTextColor(android.graphics.Color.parseColor("#00BFFF")); break;
+                  }
+              }
+
+              private String formatTime(long ms) {
+                  long s = ms / 1000;
+                  return String.format(Locale.US, "%d:%02d", s / 60, s % 60);
+              }
+
+              @Override
+              protected void onDestroy() {
+                  super.onDestroy();
+                  handler.removeCallbacks(updateProgress);
+                  if (equalizer != null) equalizer.release();
+                  MediaController.releaseFuture(controllerFuture);
+              }
+          }
+          JAVAEOF
+
+          cat <<EOF > settings.gradle
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = 'LyraAudio'
+          include ':app'
+          EOF
+
+          echo "buildscript { repositories { google(); mavenCentral() } }" > build.gradle
+
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' version '8.2.0' }
+          android {
+              namespace 'com.lyra.audiokernel'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.lyra.audiokernel'
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 3
+                  versionName '2.0'
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'androidx.documentfile:documentfile:1.0.1'
+              implementation 'androidx.media3:media3-exoplayer:1.2.0'
+              implementation 'androidx.media3:media3-common:1.2.0'
+              implementation 'androidx.media3:media3-session:1.2.0'
+              implementation 'com.google.guava:guava:32.1.3-android'
+          }
+          EOF
+
+      - name: Master Compilation
+        run: |
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Deliver Lyra v2.0 Completo
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyra-v2-Completo
+          path: "app/build/outputs/apk/debug/*.apk"
