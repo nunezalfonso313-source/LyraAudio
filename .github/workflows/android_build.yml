@@ -1,3 +1,4 @@
+
 name: Build Lyra Final Player
 on: [push]
 
@@ -14,11 +15,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - Total Reconstruction & AndroidX Patch
+      - name: AEGIS - Bloque 1 Visual & Playlist
         run: |
           rm -rf *
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
 
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
@@ -30,7 +32,7 @@ jobs:
               <application
                   android:allowBackup="true"
                   android:label="Lyra Player"
-                  android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+                  android:theme="@style/Theme.AppCompat.NoActionBar">
                   <activity android:name="com.lyra.audiokernel.MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
@@ -47,46 +49,90 @@ jobs:
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              android:gravity="center"
-              android:background="#000000"
-              android:padding="20dp">
-              <TextView
-                  android:id="@+id/track_number"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="LYRA SYSTEM READY"
-                  android:textColor="#00FF00"
-                  android:textSize="16sp"
-                  android:layout_marginBottom="8dp"/>
-              <TextView
-                  android:id="@+id/track_name"
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:text=""
-                  android:textColor="#FFFFFF"
-                  android:textSize="20sp"
-                  android:gravity="center"
-                  android:ellipsize="marquee"
-                  android:singleLine="true"
-                  android:layout_marginBottom="8dp"/>
-              <TextView
-                  android:id="@+id/track_meta"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text=""
-                  android:textColor="#00BFFF"
-                  android:textSize="13sp"
-                  android:layout_marginBottom="12dp"/>
-              <SeekBar
-                  android:id="@+id/seek_bar"
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:layout_marginBottom="4dp"/>
+              android:background="#0A0A0A">
+
+              <!-- PLAYER PANEL -->
               <LinearLayout
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:orientation="horizontal"
-                  android:layout_marginBottom="24dp">
+                  android:padding="12dp"
+                  android:background="#111111">
+
+                  <ImageView
+                      android:id="@+id/album_art"
+                      android:layout_width="80dp"
+                      android:layout_height="80dp"
+                      android:scaleType="centerCrop"
+                      android:background="#222222"
+                      android:src="@android:drawable/ic_media_play"/>
+
+                  <LinearLayout
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:orientation="vertical"
+                      android:paddingStart="12dp"
+                      android:gravity="center_vertical">
+
+                      <TextView
+                          android:id="@+id/track_title"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:text="Sin pista"
+                          android:textColor="#FFFFFF"
+                          android:textSize="15sp"
+                          android:textStyle="bold"
+                          android:ellipsize="marquee"
+                          android:singleLine="true"/>
+
+                      <TextView
+                          android:id="@+id/track_artist"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:text=""
+                          android:textColor="#00BFFF"
+                          android:textSize="13sp"
+                          android:ellipsize="end"
+                          android:singleLine="true"/>
+
+                      <TextView
+                          android:id="@+id/track_album"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:text=""
+                          android:textColor="#888888"
+                          android:textSize="12sp"
+                          android:ellipsize="end"
+                          android:singleLine="true"/>
+
+                      <TextView
+                          android:id="@+id/track_meta"
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:text=""
+                          android:textColor="#00FF00"
+                          android:textSize="11sp"/>
+                  </LinearLayout>
+              </LinearLayout>
+
+              <!-- SEEKBAR -->
+              <SeekBar
+                  android:id="@+id/seek_bar"
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:paddingStart="12dp"
+                  android:paddingEnd="12dp"
+                  android:progressTint="#00BFFF"
+                  android:thumbTint="#00BFFF"/>
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:orientation="horizontal"
+                  android:paddingStart="16dp"
+                  android:paddingEnd="16dp"
+                  android:paddingBottom="4dp">
                   <TextView
                       android:id="@+id/time_current"
                       android:layout_width="0dp"
@@ -94,7 +140,16 @@ jobs:
                       android:layout_weight="1"
                       android:text="0:00"
                       android:textColor="#00FF00"
-                      android:textSize="13sp"/>
+                      android:textSize="11sp"/>
+                  <TextView
+                      android:id="@+id/track_number"
+                      android:layout_width="0dp"
+                      android:layout_height="wrap_content"
+                      android:layout_weight="1"
+                      android:text=""
+                      android:textColor="#555555"
+                      android:textSize="11sp"
+                      android:gravity="center"/>
                   <TextView
                       android:id="@+id/time_total"
                       android:layout_width="0dp"
@@ -102,36 +157,276 @@ jobs:
                       android:layout_weight="1"
                       android:text="0:00"
                       android:textColor="#00FF00"
-                      android:textSize="13sp"
+                      android:textSize="11sp"
                       android:gravity="end"/>
               </LinearLayout>
+
+              <!-- CONTROLES -->
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="56dp"
+                  android:orientation="horizontal"
+                  android:background="#0D0D0D"
+                  android:gravity="center_vertical">
+
+                  <Button
+                      android:id="@+id/btn_shuffle"
+                      android:layout_width="0dp"
+                      android:layout_height="40dp"
+                      android:layout_weight="1"
+                      android:layout_margin="4dp"
+                      android:text="⇀"
+                      android:textSize="18sp"
+                      android:textColor="#555555"
+                      android:background="@android:color/transparent"
+                      android:padding="0dp"/>
+
+                  <Button
+                      android:id="@+id/btn_prev"
+                      android:layout_width="0dp"
+                      android:layout_height="40dp"
+                      android:layout_weight="1"
+                      android:layout_margin="4dp"
+                      android:text="⏮"
+                      android:textSize="18sp"
+                      android:textColor="#FFFFFF"
+                      android:background="@android:color/transparent"
+                      android:padding="0dp"/>
+
+                  <Button
+                      android:id="@+id/btn_play"
+                      android:layout_width="0dp"
+                      android:layout_height="44dp"
+                      android:layout_weight="1.2"
+                      android:layout_margin="4dp"
+                      android:text="▶"
+                      android:textSize="22sp"
+                      android:textColor="#00FF00"
+                      android:background="@android:color/transparent"
+                      android:padding="0dp"/>
+
+                  <Button
+                      android:id="@+id/btn_next"
+                      android:layout_width="0dp"
+                      android:layout_height="40dp"
+                      android:layout_weight="1"
+                      android:layout_margin="4dp"
+                      android:text="⏭"
+                      android:textSize="18sp"
+                      android:textColor="#FFFFFF"
+                      android:background="@android:color/transparent"
+                      android:padding="0dp"/>
+
+                  <Button
+                      android:id="@+id/btn_repeat"
+                      android:layout_width="0dp"
+                      android:layout_height="40dp"
+                      android:layout_weight="1"
+                      android:layout_margin="4dp"
+                      android:text="↺"
+                      android:textSize="18sp"
+                      android:textColor="#555555"
+                      android:background="@android:color/transparent"
+                      android:padding="0dp"/>
+              </LinearLayout>
+
+              <!-- BOTÓN CARPETA -->
               <Button
                   android:id="@+id/btn_select"
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
-                  android:text="SELECT MUSIC FOLDER"/>
-              <Button
-                  android:id="@+id/btn_prev"
+                  android:layout_height="40dp"
+                  android:text="📂  SELECCIONAR CARPETA"
+                  android:textColor="#000000"
+                  android:textSize="13sp"
+                  android:backgroundTint="#00FF00"
+                  android:layout_marginStart="12dp"
+                  android:layout_marginEnd="12dp"
+                  android:layout_marginTop="6dp"
+                  android:layout_marginBottom="6dp"/>
+
+              <!-- PLAYLIST -->
+              <TextView
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
-                  android:text="PREVIOUS"/>
-              <Button
-                  android:id="@+id/btn_next"
+                  android:layout_height="wrap_content"
+                  android:text="LISTA DE REPRODUCCIÓN"
+                  android:textColor="#444444"
+                  android:textSize="10sp"
+                  android:paddingStart="16dp"
+                  android:paddingTop="4dp"
+                  android:paddingBottom="4dp"
+                  android:letterSpacing="0.15"/>
+
+              <ListView
+                  android:id="@+id/playlist_view"
                   android:layout_width="match_parent"
-                  android:layout_height="60dp"
-                  android:text="NEXT"/>
+                  android:layout_height="0dp"
+                  android:layout_weight="1"
+                  android:divider="#1A1A1A"
+                  android:dividerHeight="1dp"
+                  android:scrollbars="none"/>
+
           </LinearLayout>
           EOF
+
+          cat <<EOF > app/src/main/res/layout/item_track.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="56dp"
+              android:orientation="horizontal"
+              android:paddingStart="16dp"
+              android:paddingEnd="16dp"
+              android:gravity="center_vertical"
+              android:background="@android:color/transparent">
+
+              <TextView
+                  android:id="@+id/item_number"
+                  android:layout_width="28dp"
+                  android:layout_height="wrap_content"
+                  android:text="1"
+                  android:textColor="#444444"
+                  android:textSize="12sp"
+                  android:gravity="center"/>
+
+              <LinearLayout
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:orientation="vertical"
+                  android:paddingStart="8dp">
+
+                  <TextView
+                      android:id="@+id/item_title"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text="Título"
+                      android:textColor="#FFFFFF"
+                      android:textSize="14sp"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+
+                  <TextView
+                      android:id="@+id/item_artist"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text=""
+                      android:textColor="#666666"
+                      android:textSize="12sp"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+              </LinearLayout>
+
+              <TextView
+                  android:id="@+id/item_duration"
+                  android:layout_width="40dp"
+                  android:layout_height="wrap_content"
+                  android:text=""
+                  android:textColor="#444444"
+                  android:textSize="12sp"
+                  android:gravity="end"/>
+
+          </LinearLayout>
+          EOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/TrackInfo.java
+          package com.lyra.audiokernel;
+          import android.graphics.Bitmap;
+          import androidx.media3.common.MediaItem;
+
+          public class TrackInfo {
+              public MediaItem mediaItem;
+              public String title;
+              public String artist;
+              public String album;
+              public String meta;
+              public String duration;
+              public Bitmap albumArt;
+              public android.net.Uri uri;
+
+              public TrackInfo(MediaItem mediaItem, String title, String artist, String album,
+                               String meta, String duration, Bitmap albumArt, android.net.Uri uri) {
+                  this.mediaItem = mediaItem;
+                  this.title = title;
+                  this.artist = artist;
+                  this.album = album;
+                  this.meta = meta;
+                  this.duration = duration;
+                  this.albumArt = albumArt;
+                  this.uri = uri;
+              }
+          }
+          JAVAEOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/TrackAdapter.java
+          package com.lyra.audiokernel;
+          import android.content.Context;
+          import android.graphics.Color;
+          import android.view.LayoutInflater;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.widget.ArrayAdapter;
+          import android.widget.TextView;
+          import java.util.List;
+
+          public class TrackAdapter extends ArrayAdapter<TrackInfo> {
+              private int currentIndex = -1;
+
+              public TrackAdapter(Context context, List<TrackInfo> tracks) {
+                  super(context, 0, tracks);
+              }
+
+              public void setCurrentIndex(int index) {
+                  this.currentIndex = index;
+                  notifyDataSetChanged();
+              }
+
+              @Override
+              public View getView(int position, View convertView, ViewGroup parent) {
+                  if (convertView == null) {
+                      convertView = LayoutInflater.from(getContext())
+                          .inflate(R.layout.item_track, parent, false);
+                  }
+                  TrackInfo track = getItem(position);
+                  TextView number = convertView.findViewById(R.id.item_number);
+                  TextView title = convertView.findViewById(R.id.item_title);
+                  TextView artist = convertView.findViewById(R.id.item_artist);
+                  TextView duration = convertView.findViewById(R.id.item_duration);
+
+                  if (position == currentIndex) {
+                      convertView.setBackgroundColor(Color.parseColor("#1A2A1A"));
+                      number.setText("▶");
+                      number.setTextColor(Color.parseColor("#00FF00"));
+                      title.setTextColor(Color.parseColor("#00FF00"));
+                  } else {
+                      convertView.setBackgroundColor(Color.TRANSPARENT);
+                      number.setText(String.valueOf(position + 1));
+                      number.setTextColor(Color.parseColor("#444444"));
+                      title.setTextColor(Color.WHITE);
+                  }
+
+                  if (track != null) {
+                      title.setText(track.title);
+                      artist.setText(track.artist);
+                      duration.setText(track.duration);
+                  }
+                  return convertView;
+              }
+          }
+          JAVAEOF
 
           cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
           import android.content.Intent;
+          import android.graphics.Bitmap;
+          import android.graphics.BitmapFactory;
           import android.media.MediaMetadataRetriever;
           import android.net.Uri;
           import android.os.Bundle;
           import android.os.Handler;
           import android.os.Looper;
           import android.widget.Button;
+          import android.widget.ImageView;
+          import android.widget.ListView;
           import android.widget.SeekBar;
           import android.widget.TextView;
           import androidx.activity.result.ActivityResultLauncher;
@@ -142,44 +437,52 @@ jobs:
           import androidx.media3.common.Player;
           import androidx.media3.exoplayer.ExoPlayer;
           import java.util.ArrayList;
+          import java.util.Collections;
           import java.util.List;
           import java.util.Locale;
 
           public class MainActivity extends AppCompatActivity {
               private ExoPlayer player;
-              private TextView trackNumber, trackName, trackMeta, timeCurrent, timeTotal;
+              private ImageView albumArt;
+              private TextView trackTitle, trackArtist, trackAlbum, trackMeta;
+              private TextView trackNumber, timeCurrent, timeTotal;
               private SeekBar seekBar;
-              private List<MediaItem> playlist = new ArrayList<>();
-              private List<String> trackNames = new ArrayList<>();
-              private List<String> trackMetas = new ArrayList<>();
-              private List<DocumentFile> trackFiles = new ArrayList<>();
+              private ListView playlistView;
+              private Button btnPlay, btnShuffle, btnRepeat;
+
+              private List<TrackInfo> tracks = new ArrayList<>();
+              private List<Integer> playOrder = new ArrayList<>();
               private int currentIndex = 0;
+              private boolean isShuffled = false;
+              private int repeatMode = 0; // 0=off, 1=all, 2=one
+              private boolean isPlaying = false;
+
+              private TrackAdapter adapter;
               private final Handler handler = new Handler(Looper.getMainLooper());
 
               private final Runnable updateProgress = new Runnable() {
-                  @Override
-                  public void run() {
+                  @Override public void run() {
                       if (player != null && player.isPlaying()) {
-                          long current = player.getCurrentPosition();
-                          long total = player.getDuration();
-                          if (total > 0) {
-                              seekBar.setMax((int) total);
-                              seekBar.setProgress((int) current);
-                              timeCurrent.setText(formatTime(current));
-                              timeTotal.setText(formatTime(total));
+                          long cur = player.getCurrentPosition();
+                          long tot = player.getDuration();
+                          if (tot > 0) {
+                              seekBar.setMax((int) tot);
+                              seekBar.setProgress((int) cur);
+                              timeCurrent.setText(formatTime(cur));
+                              timeTotal.setText(formatTime(tot));
                           }
                       }
                       handler.postDelayed(this, 500);
                   }
               };
 
-              private final ActivityResultLauncher<Uri> folderPickerLauncher = registerForActivityResult(
+              private final ActivityResultLauncher<Uri> folderPicker = registerForActivityResult(
                   new ActivityResultContracts.OpenDocumentTree(),
                   uri -> {
                       if (uri != null) {
                           getContentResolver().takePersistableUriPermission(uri,
                               Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                          loadFromFolder(uri);
+                          loadFolder(uri);
                       }
                   }
               );
@@ -188,119 +491,210 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
+
                   player = new ExoPlayer.Builder(this).build();
+                  albumArt    = findViewById(R.id.album_art);
+                  trackTitle  = findViewById(R.id.track_title);
+                  trackArtist = findViewById(R.id.track_artist);
+                  trackAlbum  = findViewById(R.id.track_album);
+                  trackMeta   = findViewById(R.id.track_meta);
                   trackNumber = findViewById(R.id.track_number);
-                  trackName = findViewById(R.id.track_name);
-                  trackMeta = findViewById(R.id.track_meta);
                   timeCurrent = findViewById(R.id.time_current);
-                  timeTotal = findViewById(R.id.time_total);
-                  seekBar = findViewById(R.id.seek_bar);
+                  timeTotal   = findViewById(R.id.time_total);
+                  seekBar     = findViewById(R.id.seek_bar);
+                  playlistView= findViewById(R.id.playlist_view);
+                  btnPlay     = findViewById(R.id.btn_play);
+                  btnShuffle  = findViewById(R.id.btn_shuffle);
+                  btnRepeat   = findViewById(R.id.btn_repeat);
+                  Button btnPrev   = findViewById(R.id.btn_prev);
+                  Button btnNext   = findViewById(R.id.btn_next);
                   Button btnSelect = findViewById(R.id.btn_select);
-                  Button btnPrev = findViewById(R.id.btn_prev);
-                  Button btnNext = findViewById(R.id.btn_next);
+
+                  adapter = new TrackAdapter(this, tracks);
+                  playlistView.setAdapter(adapter);
 
                   player.addListener(new Player.Listener() {
                       @Override
                       public void onPlaybackStateChanged(int state) {
-                          if (state == Player.STATE_ENDED) {
-                              if (currentIndex < playlist.size() - 1) {
-                                  currentIndex++;
-                                  playAt(currentIndex);
-                              }
-                          }
+                          if (state == Player.STATE_ENDED) advanceTrack(1);
+                      }
+                      @Override
+                      public void onIsPlayingChanged(boolean playing) {
+                          isPlaying = playing;
+                          btnPlay.setText(playing ? "⏸" : "▶");
                       }
                   });
 
                   seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                      @Override
-                      public void onProgressChanged(SeekBar sb, int progress, boolean fromUser) {
-                          if (fromUser) player.seekTo(progress);
+                      @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
+                          if (fromUser) player.seekTo(p);
                       }
                       @Override public void onStartTrackingTouch(SeekBar sb) {}
                       @Override public void onStopTrackingTouch(SeekBar sb) {}
                   });
 
-                  btnSelect.setOnClickListener(v -> folderPickerLauncher.launch(null));
-                  btnNext.setOnClickListener(v -> {
-                      if (currentIndex < playlist.size() - 1) { currentIndex++; playAt(currentIndex); }
+                  playlistView.setOnItemClickListener((parent, view, position, id) -> {
+                      currentIndex = position;
+                      playAt(currentIndex);
                   });
-                  btnPrev.setOnClickListener(v -> {
-                      if (currentIndex > 0) { currentIndex--; playAt(currentIndex); }
+
+                  btnSelect.setOnClickListener(v -> folderPicker.launch(null));
+                  btnPlay.setOnClickListener(v -> {
+                      if (player.isPlaying()) { player.pause(); }
+                      else { player.play(); }
                   });
+                  btnPrev.setOnClickListener(v -> advanceTrack(-1));
+                  btnNext.setOnClickListener(v -> advanceTrack(1));
+                  btnShuffle.setOnClickListener(v -> toggleShuffle());
+                  btnRepeat.setOnClickListener(v -> cycleRepeat());
 
                   handler.post(updateProgress);
               }
 
-              private void loadFromFolder(Uri treeUri) {
-                  playlist.clear();
-                  trackNames.clear();
-                  trackMetas.clear();
-                  trackFiles.clear();
+              private void loadFolder(Uri treeUri) {
+                  tracks.clear();
+                  playOrder.clear();
                   currentIndex = 0;
                   DocumentFile folder = DocumentFile.fromTreeUri(this, treeUri);
                   if (folder != null) scanFolder(folder);
-                  if (!playlist.isEmpty()) {
-                      trackNumber.setText("LIBRARY: " + playlist.size() + " tracks");
+                  for (int i = 0; i < tracks.size(); i++) playOrder.add(i);
+                  adapter.notifyDataSetChanged();
+                  if (!tracks.isEmpty()) {
+                      trackNumber.setText("LIBRERÍA: " + tracks.size() + " pistas");
                       playAt(0);
                   } else {
-                      trackNumber.setText("NO AUDIO FILES FOUND");
+                      trackTitle.setText("Sin archivos de audio");
                   }
               }
 
               private void scanFolder(DocumentFile folder) {
                   for (DocumentFile file : folder.listFiles()) {
-                      if (file.isDirectory()) {
-                          scanFolder(file);
-                      } else {
-                          String name = file.getName();
-                          if (name != null && (name.endsWith(".mp3") || name.endsWith(".flac")
-                              || name.endsWith(".m4a") || name.endsWith(".ogg"))) {
-                              playlist.add(MediaItem.fromUri(file.getUri()));
-                              String ext = name.substring(name.lastIndexOf(".") + 1).toUpperCase();
-                              String display = name.substring(0, name.lastIndexOf("."));
-                              trackNames.add(display);
-                              trackFiles.add(file);
-                              long sizeKb = file.length() / 1024;
-                              String sizeMb = String.format(Locale.US, "%.1f MB", sizeKb / 1024.0);
-                              trackMetas.add(ext + " | " + sizeMb);
+                      if (file.isDirectory()) { scanFolder(file); continue; }
+                      String name = file.getName();
+                      if (name == null) continue;
+                      String low = name.toLowerCase();
+                      if (!low.endsWith(".mp3") && !low.endsWith(".flac")
+                          && !low.endsWith(".m4a") && !low.endsWith(".ogg")) continue;
+
+                      String ext = name.substring(name.lastIndexOf(".") + 1).toUpperCase();
+                      String display = name.substring(0, name.lastIndexOf("."));
+                      long sizeKb = file.length() / 1024;
+                      String meta = ext + " | " + String.format(Locale.US, "%.1f MB", sizeKb / 1024.0);
+
+                      // Leer tags ID3
+                      String title = display, artist = "", album = "", duration = "";
+                      Bitmap art = null;
+                      try {
+                          MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                          mmr.setDataSource(getApplicationContext(), file.getUri());
+                          String t = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE);
+                          String ar = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST);
+                          String al = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM);
+                          String dur = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                          String br = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+                          byte[] artBytes = mmr.getEmbeddedPicture();
+                          mmr.release();
+                          if (t != null && !t.isEmpty()) title = t;
+                          if (ar != null) artist = ar;
+                          if (al != null) album = al;
+                          if (dur != null) {
+                              long ms = Long.parseLong(dur);
+                              duration = formatTime(ms);
                           }
-                      }
+                          if (br != null) {
+                              int kbps = Integer.parseInt(br) / 1000;
+                              meta = ext + " | " + kbps + " kbps | "
+                                  + String.format(Locale.US, "%.1f MB", sizeKb / 1024.0);
+                          }
+                          if (artBytes != null) {
+                              art = BitmapFactory.decodeByteArray(artBytes, 0, artBytes.length);
+                          }
+                      } catch (Exception ignored) {}
+
+                      tracks.add(new TrackInfo(
+                          MediaItem.fromUri(file.getUri()),
+                          title, artist, album, meta, duration, art, file.getUri()
+                      ));
                   }
               }
 
               private void playAt(int index) {
+                  if (index < 0 || index >= tracks.size()) return;
+                  currentIndex = index;
+                  TrackInfo t = tracks.get(index);
                   player.stop();
-                  player.setMediaItem(playlist.get(index));
+                  player.setMediaItem(t.mediaItem);
                   player.prepare();
                   player.play();
-                  trackNumber.setText("Track " + (index + 1) + " of " + playlist.size());
-                  trackName.setText(trackNames.get(index));
-                  trackMeta.setText(trackMetas.get(index));
+
+                  trackTitle.setText(t.title);
+                  trackArtist.setText(t.artist.isEmpty() ? "Artista desconocido" : t.artist);
+                  trackAlbum.setText(t.album.isEmpty() ? "" : t.album);
+                  trackMeta.setText(t.meta);
+                  trackNumber.setText((index + 1) + " / " + tracks.size());
                   timeCurrent.setText("0:00");
-                  timeTotal.setText("0:00");
+                  timeTotal.setText(t.duration.isEmpty() ? "0:00" : t.duration);
                   seekBar.setProgress(0);
 
-                  new Thread(() -> {
-                      try {
-                          MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-                          mmr.setDataSource(getApplicationContext(), trackFiles.get(index).getUri());
-                          String bitrate = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
-                          mmr.release();
-                          if (bitrate != null) {
-                              int kbps = Integer.parseInt(bitrate) / 1000;
-                              String currentMeta = trackMetas.get(index);
-                              String meta = currentMeta + " | " + kbps + " kbps";
-                              runOnUiThread(() -> trackMeta.setText(meta));
-                          }
-                      } catch (Exception e) {}
-                  }).start();
+                  if (t.albumArt != null) {
+                      albumArt.setImageBitmap(t.albumArt);
+                  } else {
+                      albumArt.setImageResource(android.R.drawable.ic_media_play);
+                  }
+
+                  adapter.setCurrentIndex(index);
+                  playlistView.smoothScrollToPosition(index);
+              }
+
+              private void advanceTrack(int direction) {
+                  if (tracks.isEmpty()) return;
+                  if (repeatMode == 2) { playAt(currentIndex); return; }
+                  int next = currentIndex + direction;
+                  if (next >= tracks.size()) {
+                      if (repeatMode == 1) next = 0;
+                      else return;
+                  }
+                  if (next < 0) {
+                      if (repeatMode == 1) next = tracks.size() - 1;
+                      else return;
+                  }
+                  playAt(next);
+              }
+
+              private void toggleShuffle() {
+                  isShuffled = !isShuffled;
+                  btnShuffle.setTextColor(isShuffled
+                      ? android.graphics.Color.parseColor("#00FF00")
+                      : android.graphics.Color.parseColor("#555555"));
+                  if (isShuffled) {
+                      Collections.shuffle(playOrder);
+                  } else {
+                      playOrder.clear();
+                      for (int i = 0; i < tracks.size(); i++) playOrder.add(i);
+                  }
+              }
+
+              private void cycleRepeat() {
+                  repeatMode = (repeatMode + 1) % 3;
+                  switch (repeatMode) {
+                      case 0:
+                          btnRepeat.setText("↺");
+                          btnRepeat.setTextColor(android.graphics.Color.parseColor("#555555"));
+                          break;
+                      case 1:
+                          btnRepeat.setText("↺");
+                          btnRepeat.setTextColor(android.graphics.Color.parseColor("#00FF00"));
+                          break;
+                      case 2:
+                          btnRepeat.setText("↻");
+                          btnRepeat.setTextColor(android.graphics.Color.parseColor("#00BFFF"));
+                          break;
+                  }
               }
 
               private String formatTime(long ms) {
-                  long seconds = ms / 1000;
-                  long minutes = seconds / 60;
-                  seconds = seconds % 60;
-                  return String.format(Locale.US, "%d:%02d", minutes, seconds);
+                  long s = ms / 1000;
+                  return String.format(Locale.US, "%d:%02d", s / 60, s % 60);
               }
 
               @Override
@@ -333,8 +727,8 @@ jobs:
                   applicationId 'com.lyra.audiokernel'
                   minSdk 24
                   targetSdk 34
-                  versionCode 1
-                  versionName '1.0'
+                  versionCode 2
+                  versionName '1.1'
               }
           }
           dependencies {
@@ -351,8 +745,10 @@ jobs:
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
 
-      - name: Deliver Functional Player
+      - name: Deliver Lyra Bloque 1
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-Final-Functional
+          name: Lyra-Bloque1-Visual
           path: "app/build/outputs/apk/debug/*.apk"
+
+
