@@ -661,13 +661,12 @@ jobs:
                       number.setText("▶");
                       number.setTextColor(Color.parseColor("#00FF00"));
                       title.setTextColor(Color.parseColor("#00FF00"));
-                      convertView.setOnClickListener(null);
                   } else {
                       convertView.setBackgroundColor(Color.TRANSPARENT);
                       number.setText(String.valueOf(position + 1));
                       number.setTextColor(Color.parseColor("#444444"));
                       title.setTextColor(Color.WHITE);
-                      convertView.setOnClickListener(null);
+
                   }
                   if (track != null) {
                       title.setText(track.title);
