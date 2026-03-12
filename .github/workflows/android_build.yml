@@ -26,8 +26,7 @@ jobs:
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
-              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
               <application
                   android:allowBackup="true"
                   android:label="Lyra Player"
@@ -60,10 +59,10 @@ jobs:
                   android:textSize="22sp"
                   android:layout_marginBottom="40dp"/>
               <Button
-                  android:id="@+id/btn_play"
+                  android:id="@+id/btn_select"
                   android:layout_width="match_parent"
                   android:layout_height="60dp"
-                  android:text="PLAY"/>
+                  android:text="SELECT MUSIC FOLDER"/>
               <Button
                   android:id="@+id/btn_prev"
                   android:layout_width="match_parent"
@@ -79,19 +78,16 @@ jobs:
 
           cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
-          import android.Manifest;
-          import android.content.ContentUris;
-          import android.content.pm.PackageManager;
-          import android.database.Cursor;
+          import android.content.Intent;
           import android.net.Uri;
-          import android.os.Build;
           import android.os.Bundle;
-          import android.provider.MediaStore;
+          import android.provider.DocumentsContract;
           import android.widget.Button;
           import android.widget.TextView;
+          import androidx.activity.result.ActivityResultLauncher;
+          import androidx.activity.result.contract.ActivityResultContracts;
           import androidx.appcompat.app.AppCompatActivity;
-          import androidx.core.app.ActivityCompat;
-          import androidx.core.content.ContextCompat;
+          import androidx.documentfile.provider.DocumentFile;
           import androidx.media3.common.MediaItem;
           import androidx.media3.exoplayer.ExoPlayer;
           import java.util.ArrayList;
@@ -103,36 +99,36 @@ jobs:
               private List<MediaItem> playlist = new ArrayList<>();
               private int currentIndex = 0;
 
+              private final ActivityResultLauncher<Uri> folderPickerLauncher = registerForActivityResult(
+                  new ActivityResultContracts.OpenDocumentTree(),
+                  uri -> {
+                      if (uri != null) {
+                          getContentResolver().takePersistableUriPermission(uri,
+                              Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          loadFromFolder(uri);
+                      }
+                  }
+              );
+
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
                   player = new ExoPlayer.Builder(this).build();
                   statusText = findViewById(R.id.status_text);
-                  Button btnPlay = findViewById(R.id.btn_play);
+                  Button btnSelect = findViewById(R.id.btn_select);
                   Button btnPrev = findViewById(R.id.btn_prev);
                   Button btnNext = findViewById(R.id.btn_next);
 
-                  String permission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                      ? Manifest.permission.READ_MEDIA_AUDIO
-                      : Manifest.permission.READ_EXTERNAL_STORAGE;
+                  btnSelect.setOnClickListener(v -> folderPickerLauncher.launch(null));
 
-                  if (ContextCompat.checkSelfPermission(this, permission)
-                          != PackageManager.PERMISSION_GRANTED) {
-                      ActivityCompat.requestPermissions(this, new String[]{permission}, 1);
-                  } else {
-                      loadLibrary();
-                  }
-
-                  btnPlay.setOnClickListener(v -> {
-                      if (!playlist.isEmpty()) playAt(currentIndex);
-                  });
                   btnNext.setOnClickListener(v -> {
                       if (currentIndex < playlist.size() - 1) {
                           currentIndex++;
                           playAt(currentIndex);
                       }
                   });
+
                   btnPrev.setOnClickListener(v -> {
                       if (currentIndex > 0) {
                           currentIndex--;
@@ -141,23 +137,33 @@ jobs:
                   });
               }
 
-              private void loadLibrary() {
-                  String[] projection = {MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE};
-                  String selection = MediaStore.Audio.Media.IS_MUSIC + " != 0";
-                  Cursor cursor = getContentResolver().query(
-                      MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                      projection, selection, null,
-                      MediaStore.Audio.Media.TITLE + " ASC");
-                  if (cursor != null) {
-                      while (cursor.moveToNext()) {
-                          long id = cursor.getLong(0);
-                          Uri uri = ContentUris.withAppendedId(
-                              MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id);
-                          playlist.add(MediaItem.fromUri(uri));
-                      }
-                      cursor.close();
+              private void loadFromFolder(Uri treeUri) {
+                  playlist.clear();
+                  currentIndex = 0;
+                  DocumentFile folder = DocumentFile.fromTreeUri(this, treeUri);
+                  if (folder != null) {
+                      scanFolder(folder);
                   }
-                  statusText.setText("LIBRARY: " + playlist.size() + " tracks");
+                  if (!playlist.isEmpty()) {
+                      statusText.setText("LIBRARY: " + playlist.size() + " tracks");
+                      playAt(0);
+                  } else {
+                      statusText.setText("NO AUDIO FILES FOUND");
+                  }
+              }
+
+              private void scanFolder(DocumentFile folder) {
+                  for (DocumentFile file : folder.listFiles()) {
+                      if (file.isDirectory()) {
+                          scanFolder(file);
+                      } else {
+                          String name = file.getName();
+                          if (name != null && (name.endsWith(".mp3") || name.endsWith(".flac")
+                              || name.endsWith(".m4a") || name.endsWith(".ogg"))) {
+                              playlist.add(MediaItem.fromUri(file.getUri()));
+                          }
+                      }
+                  }
               }
 
               private void playAt(int index) {
@@ -165,14 +171,6 @@ jobs:
                   player.prepare();
                   player.play();
                   statusText.setText("Track " + (index + 1) + " of " + playlist.size());
-              }
-
-              @Override
-              public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
-                  super.onRequestPermissionsResult(requestCode, permissions, results);
-                  if (requestCode == 1 && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-                      loadLibrary();
-                  }
               }
 
               @Override
@@ -210,6 +208,7 @@ jobs:
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'androidx.documentfile:documentfile:1.0.1'
               implementation 'androidx.media3:media3-exoplayer:1.2.0'
               implementation 'androidx.media3:media3-common:1.2.0'
           }
