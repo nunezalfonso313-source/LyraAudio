@@ -496,7 +496,7 @@ jobs:
           </androidx.coordinatorlayout.widget.CoordinatorLayout>
           EOF
 
-          cat <<EOF > app/src/main/res/layout/item_track.xml
+          cat <<'EOF' > app/src/main/res/layout/item_track.xml
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
