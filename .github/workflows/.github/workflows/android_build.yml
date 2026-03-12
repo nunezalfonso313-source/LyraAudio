@@ -1,0 +1,1385 @@
+name: Build Lyra Final Player
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: AEGIS - v1.7 Fix clicks y portadas
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
+          mkdir -p app/src/main/java/com/lyra/audiokernel
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
+
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+                  android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+              <application
+                  android:allowBackup="true"
+                  android:label="Lyra Player"
+                  android:theme="@style/Theme.AppCompat.NoActionBar">
+                  <activity android:name="com.lyra.audiokernel.MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <service
+                      android:name="com.lyra.audiokernel.LyraPlaybackService"
+                      android:foregroundServiceType="mediaPlayback"
+                      android:exported="false">
+                      <intent-filter>
+                          <action android:name="androidx.media3.session.MediaSessionService" />
+                      </intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
+
+          cat <<EOF > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.coordinatorlayout.widget.CoordinatorLayout
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#0A0A0A">
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:orientation="vertical">
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:padding="12dp"
+                      android:background="#111111">
+                      <ImageView
+                          android:id="@+id/album_art"
+                          android:layout_width="80dp"
+                          android:layout_height="80dp"
+                          android:scaleType="centerCrop"
+                          android:background="#222222"
+                          android:src="@android:drawable/ic_media_play"/>
+                      <LinearLayout
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:orientation="vertical"
+                          android:paddingStart="12dp"
+                          android:gravity="center_vertical">
+                          <TextView
+                              android:id="@+id/track_title"
+                              android:layout_width="match_parent"
+                              android:layout_height="wrap_content"
+                              android:text="Cargando biblioteca..."
+                              android:textColor="#FFFFFF"
+                              android:textSize="15sp"
+                              android:textStyle="bold"
+                              android:ellipsize="marquee"
+                              android:singleLine="true"/>
+                          <TextView
+                              android:id="@+id/track_artist"
+                              android:layout_width="match_parent"
+                              android:layout_height="wrap_content"
+                              android:text=""
+                              android:textColor="#00BFFF"
+                              android:textSize="13sp"
+                              android:ellipsize="end"
+                              android:singleLine="true"/>
+                          <TextView
+                              android:id="@+id/track_album"
+                              android:layout_width="match_parent"
+                              android:layout_height="wrap_content"
+                              android:text=""
+                              android:textColor="#888888"
+                              android:textSize="12sp"
+                              android:ellipsize="end"
+                              android:singleLine="true"/>
+                          <TextView
+                              android:id="@+id/track_meta"
+                              android:layout_width="match_parent"
+                              android:layout_height="wrap_content"
+                              android:text=""
+                              android:textColor="#00FF00"
+                              android:textSize="11sp"/>
+                      </LinearLayout>
+                  </LinearLayout>
+                  <SeekBar
+                      android:id="@+id/seek_bar"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:paddingStart="12dp"
+                      android:paddingEnd="12dp"
+                      android:progressTint="#00BFFF"
+                      android:thumbTint="#00BFFF"/>
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:paddingStart="16dp"
+                      android:paddingEnd="16dp"
+                      android:paddingBottom="4dp">
+                      <TextView
+                          android:id="@+id/time_current"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:text="0:00"
+                          android:textColor="#00FF00"
+                          android:textSize="11sp"/>
+                      <TextView
+                          android:id="@+id/track_number"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:text=""
+                          android:textColor="#555555"
+                          android:textSize="11sp"
+                          android:gravity="center"/>
+                      <TextView
+                          android:id="@+id/time_total"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:text="0:00"
+                          android:textColor="#00FF00"
+                          android:textSize="11sp"
+                          android:gravity="end"/>
+                  </LinearLayout>
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="56dp"
+                      android:orientation="horizontal"
+                      android:background="#0D0D0D"
+                      android:gravity="center_vertical">
+                      <Button
+                          android:id="@+id/btn_shuffle"
+                          android:layout_width="0dp"
+                          android:layout_height="40dp"
+                          android:layout_weight="1"
+                          android:layout_margin="4dp"
+                          android:text="⇀"
+                          android:textSize="18sp"
+                          android:textColor="#555555"
+                          android:background="@android:color/transparent"
+                          android:padding="0dp"/>
+                      <Button
+                          android:id="@+id/btn_prev"
+                          android:layout_width="0dp"
+                          android:layout_height="40dp"
+                          android:layout_weight="1"
+                          android:layout_margin="4dp"
+                          android:text="⏮"
+                          android:textSize="18sp"
+                          android:textColor="#FFFFFF"
+                          android:background="@android:color/transparent"
+                          android:padding="0dp"/>
+                      <Button
+                          android:id="@+id/btn_play"
+                          android:layout_width="0dp"
+                          android:layout_height="44dp"
+                          android:layout_weight="1.2"
+                          android:layout_margin="4dp"
+                          android:text="▶"
+                          android:textSize="22sp"
+                          android:textColor="#00FF00"
+                          android:background="@android:color/transparent"
+                          android:padding="0dp"/>
+                      <Button
+                          android:id="@+id/btn_next"
+                          android:layout_width="0dp"
+                          android:layout_height="40dp"
+                          android:layout_weight="1"
+                          android:layout_margin="4dp"
+                          android:text="⏭"
+                          android:textSize="18sp"
+                          android:textColor="#FFFFFF"
+                          android:background="@android:color/transparent"
+                          android:padding="0dp"/>
+                      <Button
+                          android:id="@+id/btn_repeat"
+                          android:layout_width="0dp"
+                          android:layout_height="40dp"
+                          android:layout_weight="1"
+                          android:layout_margin="4dp"
+                          android:text="↺"
+                          android:textSize="18sp"
+                          android:textColor="#555555"
+                          android:background="@android:color/transparent"
+                          android:padding="0dp"/>
+                  </LinearLayout>
+                  <LinearLayout
+                      android:id="@+id/eq_panel"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical"
+                      android:background="#0D0D0D"
+                      android:paddingStart="12dp"
+                      android:paddingEnd="12dp"
+                      android:paddingBottom="8dp"
+                      android:visibility="gone">
+                      <LinearLayout
+                          android:layout_width="match_parent"
+                          android:layout_height="wrap_content"
+                          android:orientation="horizontal"
+                          android:paddingTop="6dp"
+                          android:paddingBottom="2dp">
+                          <TextView
+                              android:layout_width="0dp"
+                              android:layout_height="wrap_content"
+                              android:layout_weight="1"
+                              android:text="ECUALIZADOR"
+                              android:textColor="#444444"
+                              android:textSize="10sp"
+                              android:letterSpacing="0.15"/>
+                          <Button
+                              android:id="@+id/btn_eq_reset"
+                              android:layout_width="wrap_content"
+                              android:layout_height="24dp"
+                              android:text="RESET"
+                              android:textSize="10sp"
+                              android:textColor="#555555"
+                              android:background="@android:color/transparent"
+                              android:padding="0dp"/>
+                      </LinearLayout>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:orientation="horizontal" android:gravity="center_vertical">
+                          <TextView android:id="@+id/eq_label0" android:layout_width="44dp" android:layout_height="wrap_content" android:text="--" android:textColor="#555555" android:textSize="10sp"/>
+                          <SeekBar android:id="@+id/eq_band0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                          <TextView android:id="@+id/eq_val0" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                      </LinearLayout>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:orientation="horizontal" android:gravity="center_vertical">
+                          <TextView android:id="@+id/eq_label1" android:layout_width="44dp" android:layout_height="wrap_content" android:text="--" android:textColor="#555555" android:textSize="10sp"/>
+                          <SeekBar android:id="@+id/eq_band1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                          <TextView android:id="@+id/eq_val1" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                      </LinearLayout>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:orientation="horizontal" android:gravity="center_vertical">
+                          <TextView android:id="@+id/eq_label2" android:layout_width="44dp" android:layout_height="wrap_content" android:text="--" android:textColor="#555555" android:textSize="10sp"/>
+                          <SeekBar android:id="@+id/eq_band2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                          <TextView android:id="@+id/eq_val2" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                      </LinearLayout>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:orientation="horizontal" android:gravity="center_vertical">
+                          <TextView android:id="@+id/eq_label3" android:layout_width="44dp" android:layout_height="wrap_content" android:text="--" android:textColor="#555555" android:textSize="10sp"/>
+                          <SeekBar android:id="@+id/eq_band3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                          <TextView android:id="@+id/eq_val3" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                      </LinearLayout>
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="36dp" android:orientation="horizontal" android:gravity="center_vertical">
+                          <TextView android:id="@+id/eq_label4" android:layout_width="44dp" android:layout_height="wrap_content" android:text="--" android:textColor="#555555" android:textSize="10sp"/>
+                          <SeekBar android:id="@+id/eq_band4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:max="20" android:progress="10" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                          <TextView android:id="@+id/eq_val4" android:layout_width="36dp" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp" android:gravity="end"/>
+                      </LinearLayout>
+                  </LinearLayout>
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:paddingStart="12dp"
+                      android:paddingEnd="12dp"
+                      android:paddingTop="4dp"
+                      android:paddingBottom="2dp">
+                      <Button
+                          android:id="@+id/btn_eq"
+                          android:layout_width="0dp"
+                          android:layout_weight="1"
+                          android:layout_height="36dp"
+                          android:layout_marginEnd="4dp"
+                          android:text="🎚 EQ"
+                          android:textColor="#FFFFFF"
+                          android:textSize="11sp"
+                          android:backgroundTint="#1A1A1A"/>
+                      <Button
+                          android:id="@+id/btn_sort"
+                          android:layout_width="0dp"
+                          android:layout_weight="1"
+                          android:layout_height="36dp"
+                          android:layout_marginStart="4dp"
+                          android:layout_marginEnd="4dp"
+                          android:text="AZ TÍTULO"
+                          android:textColor="#FFFFFF"
+                          android:textSize="11sp"
+                          android:backgroundTint="#1A1A1A"/>
+                      <Button
+                          android:id="@+id/btn_search"
+                          android:layout_width="0dp"
+                          android:layout_weight="1"
+                          android:layout_height="36dp"
+                          android:layout_marginStart="4dp"
+                          android:layout_marginEnd="4dp"
+                          android:text="🔍"
+                          android:textColor="#FFFFFF"
+                          android:textSize="16sp"
+                          android:backgroundTint="#1A1A1A"/>
+                      <Button
+                          android:id="@+id/btn_playlists"
+                          android:layout_width="0dp"
+                          android:layout_weight="1"
+                          android:layout_height="36dp"
+                          android:layout_marginStart="4dp"
+                          android:text="≡ PL"
+                          android:textColor="#FFFFFF"
+                          android:textSize="11sp"
+                          android:backgroundTint="#1A1A1A"/>
+                  </LinearLayout>
+                  <LinearLayout
+                      android:id="@+id/search_bar"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:paddingStart="12dp"
+                      android:paddingEnd="12dp"
+                      android:paddingBottom="4dp"
+                      android:visibility="gone">
+                      <EditText
+                          android:id="@+id/search_input"
+                          android:layout_width="0dp"
+                          android:layout_height="36dp"
+                          android:layout_weight="1"
+                          android:background="#1A1A1A"
+                          android:textColor="#FFFFFF"
+                          android:textColorHint="#555555"
+                          android:hint="Buscar título o artista..."
+                          android:textSize="13sp"
+                          android:paddingStart="12dp"
+                          android:paddingEnd="12dp"
+                          android:inputType="text"
+                          android:imeOptions="actionSearch"
+                          android:singleLine="true"/>
+                      <Button
+                          android:id="@+id/btn_search_clear"
+                          android:layout_width="36dp"
+                          android:layout_height="36dp"
+                          android:text="✕"
+                          android:textColor="#555555"
+                          android:textSize="14sp"
+                          android:background="@android:color/transparent"
+                          android:padding="0dp"/>
+                  </LinearLayout>
+                  <TextView
+                      android:id="@+id/library_label"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text="LISTA DE REPRODUCCIÓN"
+                      android:textColor="#444444"
+                      android:textSize="10sp"
+                      android:paddingStart="16dp"
+                      android:paddingTop="4dp"
+                      android:paddingBottom="4dp"
+                      android:letterSpacing="0.15"/>
+                  <ListView
+                      android:id="@+id/playlist_view"
+                      android:layout_width="match_parent"
+                      android:layout_height="0dp"
+                      android:layout_weight="1"
+                      android:divider="#1A1A1A"
+                      android:dividerHeight="1dp"
+                      android:scrollbars="none"/>
+              </LinearLayout>
+              <LinearLayout
+                  android:id="@+id/pl_scrim"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:background="#99000000"
+                  android:visibility="gone"
+                  android:orientation="vertical"/>
+              <LinearLayout
+                  android:id="@+id/pl_drawer"
+                  android:layout_width="match_parent"
+                  android:layout_height="480dp"
+                  android:layout_gravity="bottom"
+                  android:orientation="vertical"
+                  android:background="#111111"
+                  android:visibility="gone"
+                  android:elevation="16dp">
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="48dp"
+                      android:orientation="horizontal"
+                      android:paddingStart="16dp"
+                      android:paddingEnd="8dp"
+                      android:gravity="center_vertical"
+                      android:background="#161616">
+                      <TextView
+                          android:id="@+id/pl_drawer_title"
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:text="PLAYLISTS"
+                          android:textColor="#FFFFFF"
+                          android:textSize="13sp"
+                          android:textStyle="bold"
+                          android:letterSpacing="0.1"/>
+                      <Button
+                          android:id="@+id/btn_pl_new"
+                          android:layout_width="wrap_content"
+                          android:layout_height="32dp"
+                          android:text="+ NUEVA"
+                          android:textSize="11sp"
+                          android:textColor="#000000"
+                          android:backgroundTint="#00FF00"
+                          android:paddingStart="12dp"
+                          android:paddingEnd="12dp"/>
+                      <Button
+                          android:id="@+id/btn_pl_close"
+                          android:layout_width="40dp"
+                          android:layout_height="40dp"
+                          android:text="✕"
+                          android:textColor="#555555"
+                          android:textSize="16sp"
+                          android:background="@android:color/transparent"
+                          android:padding="0dp"/>
+                  </LinearLayout>
+                  <LinearLayout
+                      android:id="@+id/pl_name_bar"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:paddingStart="12dp"
+                      android:paddingEnd="12dp"
+                      android:paddingTop="8dp"
+                      android:paddingBottom="8dp"
+                      android:background="#0D0D0D"
+                      android:visibility="gone">
+                      <EditText
+                          android:id="@+id/pl_name_input"
+                          android:layout_width="0dp"
+                          android:layout_height="36dp"
+                          android:layout_weight="1"
+                          android:background="#1A1A1A"
+                          android:textColor="#FFFFFF"
+                          android:textColorHint="#555555"
+                          android:hint="Nombre de la playlist..."
+                          android:textSize="13sp"
+                          android:paddingStart="12dp"
+                          android:paddingEnd="12dp"
+                          android:inputType="text"
+                          android:singleLine="true"/>
+                      <Button
+                          android:id="@+id/btn_pl_save"
+                          android:layout_width="wrap_content"
+                          android:layout_height="36dp"
+                          android:text="GUARDAR"
+                          android:textSize="11sp"
+                          android:textColor="#000000"
+                          android:backgroundTint="#00BFFF"
+                          android:layout_marginStart="8dp"
+                          android:paddingStart="12dp"
+                          android:paddingEnd="12dp"/>
+                  </LinearLayout>
+                  <ListView
+                      android:id="@+id/pl_list"
+                      android:layout_width="match_parent"
+                      android:layout_height="0dp"
+                      android:layout_weight="1"
+                      android:divider="#1A1A1A"
+                      android:dividerHeight="1dp"
+                      android:scrollbars="none"/>
+              </LinearLayout>
+          </androidx.coordinatorlayout.widget.CoordinatorLayout>
+          EOF
+
+          cat <<EOF > app/src/main/res/layout/item_track.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="56dp"
+              android:orientation="horizontal"
+              android:paddingStart="16dp"
+              android:paddingEnd="16dp"
+              android:gravity="center_vertical"
+              android:background="@android:color/transparent">
+              <TextView
+                  android:id="@+id/item_number"
+                  android:layout_width="28dp"
+                  android:layout_height="wrap_content"
+                  android:text="1"
+                  android:textColor="#444444"
+                  android:textSize="12sp"
+                  android:gravity="center"/>
+              <LinearLayout
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:orientation="vertical"
+                  android:paddingStart="8dp">
+                  <TextView
+                      android:id="@+id/item_title"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text="Título"
+                      android:textColor="#FFFFFF"
+                      android:textSize="14sp"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+                  <TextView
+                      android:id="@+id/item_artist"
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:text=""
+                      android:textColor="#666666"
+                      android:textSize="12sp"
+                      android:ellipsize="end"
+                      android:singleLine="true"/>
+              </LinearLayout>
+              <TextView
+                  android:id="@+id/item_duration"
+                  android:layout_width="40dp"
+                  android:layout_height="wrap_content"
+                  android:text=""
+                  android:textColor="#444444"
+                  android:textSize="12sp"
+                  android:gravity="end"/>
+          </LinearLayout>
+          EOF
+
+          cat <<EOF > app/src/main/res/layout/item_playlist.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="52dp"
+              android:orientation="horizontal"
+              android:paddingStart="16dp"
+              android:paddingEnd="8dp"
+              android:gravity="center_vertical"
+              android:background="@android:color/transparent">
+              <TextView
+                  android:id="@+id/pl_item_name"
+                  android:layout_width="0dp"
+                  android:layout_height="wrap_content"
+                  android:layout_weight="1"
+                  android:text="Playlist"
+                  android:textColor="#FFFFFF"
+                  android:textSize="14sp"
+                  android:ellipsize="end"
+                  android:singleLine="true"/>
+              <TextView
+                  android:id="@+id/pl_item_count"
+                  android:layout_width="wrap_content"
+                  android:layout_height="wrap_content"
+                  android:text="0 pistas"
+                  android:textColor="#555555"
+                  android:textSize="12sp"
+                  android:paddingEnd="8dp"/>
+              <Button
+                  android:id="@+id/pl_item_delete"
+                  android:layout_width="32dp"
+                  android:layout_height="32dp"
+                  android:text="🗑"
+                  android:textSize="14sp"
+                  android:background="@android:color/transparent"
+                  android:padding="0dp"/>
+          </LinearLayout>
+          EOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/TrackInfo.java
+          package com.lyra.audiokernel;
+          import android.graphics.Bitmap;
+          import androidx.media3.common.MediaItem;
+          public class TrackInfo {
+              public MediaItem mediaItem;
+              public String title;
+              public String artist;
+              public String album;
+              public String meta;
+              public String duration;
+              public Bitmap albumArt;
+              public android.net.Uri uri;
+              public TrackInfo(MediaItem mediaItem, String title, String artist, String album,
+                               String meta, String duration, Bitmap albumArt, android.net.Uri uri) {
+                  this.mediaItem = mediaItem;
+                  this.title = title;
+                  this.artist = artist;
+                  this.album = album;
+                  this.meta = meta;
+                  this.duration = duration;
+                  this.albumArt = albumArt;
+                  this.uri = uri;
+              }
+          }
+          JAVAEOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/TrackAdapter.java
+          package com.lyra.audiokernel;
+          import android.content.Context;
+          import android.graphics.Color;
+          import android.view.LayoutInflater;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.widget.ArrayAdapter;
+          import android.widget.TextView;
+          import java.util.List;
+          public class TrackAdapter extends ArrayAdapter<TrackInfo> {
+              private int currentIndex = -1;
+              private boolean addMode = false;
+              public interface OnAddClickListener { void onAdd(int position); }
+              private OnAddClickListener addListener;
+              public TrackAdapter(Context context, List<TrackInfo> tracks) {
+                  super(context, 0, tracks);
+              }
+              public void setCurrentIndex(int index) { this.currentIndex = index; notifyDataSetChanged(); }
+              public void setAddMode(boolean addMode, OnAddClickListener listener) {
+                  this.addMode = addMode;
+                  this.addListener = listener;
+                  notifyDataSetChanged();
+              }
+              @Override
+              public View getView(int position, View convertView, ViewGroup parent) {
+                  if (convertView == null)
+                      convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_track, parent, false);
+                  TrackInfo track = getItem(position);
+                  TextView number   = convertView.findViewById(R.id.item_number);
+                  TextView title    = convertView.findViewById(R.id.item_title);
+                  TextView artist   = convertView.findViewById(R.id.item_artist);
+                  TextView duration = convertView.findViewById(R.id.item_duration);
+                  if (addMode) {
+                      convertView.setBackgroundColor(Color.TRANSPARENT);
+                      number.setText("+");
+                      number.setTextColor(Color.parseColor("#00BFFF"));
+                      title.setTextColor(Color.WHITE);
+                      final int pos = position;
+                      convertView.setOnClickListener(v -> { if (addListener != null) addListener.onAdd(pos); });
+                  } else if (position == currentIndex) {
+                      convertView.setBackgroundColor(Color.parseColor("#1A2A1A"));
+                      number.setText("▶");
+                      number.setTextColor(Color.parseColor("#00FF00"));
+                      title.setTextColor(Color.parseColor("#00FF00"));
+                      convertView.setOnClickListener(null);
+                  } else {
+                      convertView.setBackgroundColor(Color.TRANSPARENT);
+                      number.setText(String.valueOf(position + 1));
+                      number.setTextColor(Color.parseColor("#444444"));
+                      title.setTextColor(Color.WHITE);
+                      convertView.setOnClickListener(null);
+                  }
+                  if (track != null) {
+                      title.setText(track.title);
+                      artist.setText(track.artist);
+                      duration.setText(track.duration);
+                  }
+                  return convertView;
+              }
+          }
+          JAVAEOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/LyraPlaylist.java
+          package com.lyra.audiokernel;
+          import java.util.ArrayList;
+          import java.util.List;
+          public class LyraPlaylist {
+              public String name;
+              public List<String> uris = new ArrayList<>();
+              public LyraPlaylist(String name) { this.name = name; }
+          }
+          JAVAEOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
+          package com.lyra.audiokernel;
+          import android.content.Intent;
+          import android.media.audiofx.Equalizer;
+          import android.os.Binder;
+          import android.os.IBinder;
+          import androidx.media3.exoplayer.ExoPlayer;
+          import androidx.media3.session.MediaSession;
+          import androidx.media3.session.MediaSessionService;
+          public class LyraPlaybackService extends MediaSessionService {
+              private MediaSession mediaSession;
+              private ExoPlayer player;
+              private Equalizer equalizer;
+              private final LyraBinder binder = new LyraBinder();
+              public class LyraBinder extends Binder {
+                  public LyraPlaybackService getService() { return LyraPlaybackService.this; }
+              }
+              @Override
+              public IBinder onBind(Intent intent) {
+                  if (intent != null && "lyra.eq.bind".equals(intent.getAction())) return binder;
+                  return super.onBind(intent);
+              }
+              @Override
+              public void onCreate() {
+                  super.onCreate();
+                  player = new ExoPlayer.Builder(this).build();
+                  mediaSession = new MediaSession.Builder(this, player).build();
+                  try { equalizer = new Equalizer(0, player.getAudioSessionId()); equalizer.setEnabled(true); } catch (Exception ignored) {}
+              }
+              public short getNumBands() { return equalizer != null ? equalizer.getNumberOfBands() : 5; }
+              public int getBandFreq(short band) { return equalizer != null ? equalizer.getCenterFreq(band) : 0; }
+              public short[] getBandLevelRange() { return equalizer != null ? equalizer.getBandLevelRange() : new short[]{-1500, 1500}; }
+              public short getBandLevel(short band) { return equalizer != null ? equalizer.getBandLevel(band) : 0; }
+              public void setBandLevel(short band, short levelMillibels) { if (equalizer != null) equalizer.setBandLevel(band, levelMillibels); }
+              public void resetEq() {
+                  if (equalizer != null) { short n = equalizer.getNumberOfBands(); for (short i = 0; i < n; i++) equalizer.setBandLevel(i, (short) 0); }
+              }
+              @Override public MediaSession onGetSession(MediaSession.ControllerInfo c) { return mediaSession; }
+              @Override
+              public void onDestroy() {
+                  if (equalizer != null) equalizer.release();
+                  mediaSession.getPlayer().release();
+                  mediaSession.release();
+                  super.onDestroy();
+              }
+          }
+          JAVAEOF
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
+          package com.lyra.audiokernel;
+          import android.Manifest;
+          import android.content.ComponentName;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.ServiceConnection;
+          import android.content.pm.PackageManager;
+          import android.database.Cursor;
+          import android.graphics.Bitmap;
+          import android.graphics.BitmapFactory;
+          import android.media.MediaMetadataRetriever;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.IBinder;
+          import android.os.Looper;
+          import android.provider.MediaStore;
+          import android.text.Editable;
+          import android.text.TextWatcher;
+          import android.view.LayoutInflater;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.view.inputmethod.InputMethodManager;
+          import android.widget.ArrayAdapter;
+          import android.widget.Button;
+          import android.widget.EditText;
+          import android.widget.ImageView;
+          import android.widget.LinearLayout;
+          import android.widget.ListView;
+          import android.widget.SeekBar;
+          import android.widget.TextView;
+          import android.widget.Toast;
+          import androidx.activity.result.ActivityResultLauncher;
+          import androidx.activity.result.contract.ActivityResultContracts;
+          import androidx.appcompat.app.AppCompatActivity;
+          import androidx.core.content.ContextCompat;
+          import androidx.media3.common.MediaItem;
+          import androidx.media3.common.Player;
+          import androidx.media3.session.MediaController;
+          import androidx.media3.session.SessionToken;
+          import com.google.common.util.concurrent.ListenableFuture;
+          import com.google.common.util.concurrent.MoreExecutors;
+          import org.json.JSONArray;
+          import org.json.JSONObject;
+          import java.util.ArrayList;
+          import java.util.Collections;
+          import java.util.Comparator;
+          import java.util.List;
+          import java.util.Locale;
+          import java.util.stream.Collectors;
+          public class MainActivity extends AppCompatActivity {
+              private MediaController mediaController;
+              private ListenableFuture<MediaController> controllerFuture;
+              private LyraPlaybackService lyraService;
+              private boolean serviceBound = false;
+              private ImageView albumArt;
+              private TextView trackTitle, trackArtist, trackAlbum, trackMeta, trackNumber, timeCurrent, timeTotal, libraryLabel;
+              private SeekBar seekBar;
+              private ListView playlistView;
+              private Button btnPlay, btnShuffle, btnRepeat, btnEq, btnSort, btnSearch;
+              private LinearLayout eqPanel, searchBar, plDrawer, plScrim, plNameBar;
+              private EditText searchInput, plNameInput;
+              private ListView plList;
+              private SeekBar[] eqBands = new SeekBar[5];
+              private TextView[] eqVals = new TextView[5];
+              private TextView[] eqLabels = new TextView[5];
+              private boolean eqVisible = false, eqInitialized = false;
+              private boolean searchVisible = false;
+              private boolean plDrawerVisible = false;
+              private boolean addingToPlaylist = false;
+              private List<TrackInfo> allTracks = new ArrayList<>();
+              private List<TrackInfo> displayedTracks = new ArrayList<>();
+              private int currentIndex = 0;
+              private int repeatMode = 0;
+              private int sortMode = 0;
+              private TrackAdapter adapter;
+              private List<LyraPlaylist> playlists = new ArrayList<>();
+              private PlaylistAdapter plAdapter;
+              private final Handler handler = new Handler(Looper.getMainLooper());
+              private static final String PREFS = "lyra_prefs";
+              private static final String KEY_INDEX = "last_index";
+              private static final String KEY_PLAYLISTS = "playlists_json";
+              private final ServiceConnection eqConnection = new ServiceConnection() {
+                  @Override public void onServiceConnected(ComponentName n, IBinder b) {
+                      lyraService = ((LyraPlaybackService.LyraBinder) b).getService();
+                      serviceBound = true;
+                      initEqUI();
+                  }
+                  @Override public void onServiceDisconnected(ComponentName n) { serviceBound = false; lyraService = null; }
+              };
+              private final Runnable updateProgress = new Runnable() {
+                  @Override public void run() {
+                      if (mediaController != null && mediaController.isPlaying()) {
+                          long cur = mediaController.getCurrentPosition();
+                          long tot = mediaController.getDuration();
+                          if (tot > 0) {
+                              seekBar.setMax((int) tot);
+                              seekBar.setProgress((int) cur);
+                              timeCurrent.setText(formatTime(cur));
+                              timeTotal.setText(formatTime(tot));
+                          }
+                      }
+                      handler.postDelayed(this, 500);
+                  }
+              };
+              private final ActivityResultLauncher<String> permissionLauncher =
+                  registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                      if (granted) loadMediaStore();
+                      else trackTitle.setText("Permiso necesario para leer música");
+                  });
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_main);
+                  albumArt     = findViewById(R.id.album_art);
+                  trackTitle   = findViewById(R.id.track_title);
+                  trackArtist  = findViewById(R.id.track_artist);
+                  trackAlbum   = findViewById(R.id.track_album);
+                  trackMeta    = findViewById(R.id.track_meta);
+                  trackNumber  = findViewById(R.id.track_number);
+                  timeCurrent  = findViewById(R.id.time_current);
+                  timeTotal    = findViewById(R.id.time_total);
+                  libraryLabel = findViewById(R.id.library_label);
+                  seekBar      = findViewById(R.id.seek_bar);
+                  playlistView = findViewById(R.id.playlist_view);
+                  btnPlay      = findViewById(R.id.btn_play);
+                  btnShuffle   = findViewById(R.id.btn_shuffle);
+                  btnRepeat    = findViewById(R.id.btn_repeat);
+                  btnEq        = findViewById(R.id.btn_eq);
+                  btnSort      = findViewById(R.id.btn_sort);
+                  btnSearch    = findViewById(R.id.btn_search);
+                  eqPanel      = findViewById(R.id.eq_panel);
+                  searchBar    = findViewById(R.id.search_bar);
+                  searchInput  = findViewById(R.id.search_input);
+                  plDrawer     = findViewById(R.id.pl_drawer);
+                  plScrim      = findViewById(R.id.pl_scrim);
+                  plNameBar    = findViewById(R.id.pl_name_bar);
+                  plNameInput  = findViewById(R.id.pl_name_input);
+                  plList       = findViewById(R.id.pl_list);
+                  Button btnPrev        = findViewById(R.id.btn_prev);
+                  Button btnNext        = findViewById(R.id.btn_next);
+                  Button btnEqReset     = findViewById(R.id.btn_eq_reset);
+                  Button btnPlNew       = findViewById(R.id.btn_pl_new);
+                  Button btnPlClose     = findViewById(R.id.btn_pl_close);
+                  Button btnPlSave      = findViewById(R.id.btn_pl_save);
+                  Button btnSearchClear = findViewById(R.id.btn_search_clear);
+                  int[] bandIds  = {R.id.eq_band0,R.id.eq_band1,R.id.eq_band2,R.id.eq_band3,R.id.eq_band4};
+                  int[] valIds   = {R.id.eq_val0, R.id.eq_val1, R.id.eq_val2, R.id.eq_val3, R.id.eq_val4};
+                  int[] labelIds = {R.id.eq_label0,R.id.eq_label1,R.id.eq_label2,R.id.eq_label3,R.id.eq_label4};
+                  for (int i = 0; i < 5; i++) {
+                      eqBands[i]  = findViewById(bandIds[i]);
+                      eqVals[i]   = findViewById(valIds[i]);
+                      eqLabels[i] = findViewById(labelIds[i]);
+                      final short band = (short) i;
+                      eqBands[i].setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                          @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
+                              if (!fromUser || !serviceBound) return;
+                              short[] range = lyraService.getBandLevelRange();
+                              int span = range[1] - range[0];
+                              short level = (short)(range[0] + (span * p / 20));
+                              lyraService.setBandLevel(band, level);
+                              int db = level / 100;
+                              eqVals[band].setText((db >= 0 ? "+" : "") + db + "dB");
+                          }
+                          @Override public void onStartTrackingTouch(SeekBar sb) {}
+                          @Override public void onStopTrackingTouch(SeekBar sb) {}
+                      });
+                  }
+                  loadPlaylists();
+                  plAdapter = new PlaylistAdapter();
+                  plList.setAdapter(plAdapter);
+                  adapter = new TrackAdapter(this, displayedTracks);
+                  playlistView.setAdapter(adapter);
+                  seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                      @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
+                          if (fromUser && mediaController != null) mediaController.seekTo(p);
+                      }
+                      @Override public void onStartTrackingTouch(SeekBar sb) {}
+                      @Override public void onStopTrackingTouch(SeekBar sb) {}
+                  });
+                  playlistView.setOnItemClickListener((parent, view, position, id) -> {
+                      if (addingToPlaylist) return;
+                      playAt(position);
+                  });
+                  btnPlay.setOnClickListener(v -> {
+                      if (mediaController == null) return;
+                      if (mediaController.isPlaying()) mediaController.pause();
+                      else mediaController.play();
+                  });
+                  btnPrev.setOnClickListener(v -> advanceTrack(-1));
+                  btnNext.setOnClickListener(v -> advanceTrack(1));
+                  btnShuffle.setOnClickListener(v -> toggleShuffle());
+                  btnRepeat.setOnClickListener(v -> cycleRepeat());
+                  btnEq.setOnClickListener(v -> {
+                      eqVisible = !eqVisible;
+                      eqPanel.setVisibility(eqVisible ? View.VISIBLE : View.GONE);
+                      btnEq.setTextColor(eqVisible ? android.graphics.Color.parseColor("#00FF00") : android.graphics.Color.WHITE);
+                  });
+                  btnEqReset.setOnClickListener(v -> {
+                      if (serviceBound) { lyraService.resetEq(); for (int i = 0; i < 5; i++) { eqBands[i].setProgress(10); eqVals[i].setText("0dB"); } }
+                  });
+                  btnSort.setOnClickListener(v -> cycleSort());
+                  btnSearch.setOnClickListener(v -> toggleSearch());
+                  btnSearchClear.setOnClickListener(v -> { searchInput.setText(""); toggleSearch(); });
+                  searchInput.addTextChangedListener(new TextWatcher() {
+                      @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+                      @Override public void onTextChanged(CharSequence s, int st, int b, int c) { filterTracks(s.toString()); }
+                      @Override public void afterTextChanged(Editable s) {}
+                  });
+                  btnPlNew.setOnClickListener(v -> {
+                      plNameBar.setVisibility(View.VISIBLE);
+                      plNameInput.setText("");
+                      plNameInput.requestFocus();
+                  });
+                  btnPlSave.setOnClickListener(v -> {
+                      String name = plNameInput.getText().toString().trim();
+                      if (name.isEmpty()) { Toast.makeText(this, "Escribe un nombre", Toast.LENGTH_SHORT).show(); return; }
+                      plNameBar.setVisibility(View.GONE);
+                      hideSoftKeyboard();
+                      enterAddMode(name);
+                  });
+                  btnPlClose.setOnClickListener(v -> closePlDrawer());
+                  plScrim.setOnClickListener(v -> closePlDrawer());
+                  plList.setOnItemClickListener((parent, view, position, id) -> {
+                      if (!addingToPlaylist) loadPlaylistIntoQueue(playlists.get(position));
+                  });
+                  findViewById(R.id.btn_playlists).setOnClickListener(v -> togglePlDrawer());
+                  Intent eqIntent = new Intent(this, LyraPlaybackService.class);
+                  eqIntent.setAction("lyra.eq.bind");
+                  bindService(eqIntent, eqConnection, Context.BIND_AUTO_CREATE);
+                  SessionToken token = new SessionToken(this, new ComponentName(this, LyraPlaybackService.class));
+                  controllerFuture = new MediaController.Builder(this, token).buildAsync();
+                  controllerFuture.addListener(() -> {
+                      try {
+                          mediaController = controllerFuture.get();
+                          mediaController.addListener(new Player.Listener() {
+                              @Override public void onIsPlayingChanged(boolean playing) {
+                                  btnPlay.setText(playing ? "⏸" : "▶");
+                              }
+                              @Override public void onMediaItemTransition(MediaItem item, int reason) {
+                                  int idx = mediaController.getCurrentMediaItemIndex();
+                                  if (idx >= 0 && idx < displayedTracks.size()) updateUI(idx);
+                              }
+                          });
+                          checkPermissionAndLoad();
+                      } catch (Exception e) { trackTitle.setText("Error al iniciar servicio"); }
+                  }, MoreExecutors.directExecutor());
+                  handler.post(updateProgress);
+              }
+              private void enterAddMode(String plName) {
+                  addingToPlaylist = true;
+                  closePlDrawer();
+                  libraryLabel.setText("TOCA + PARA AGREGAR A: " + plName.toUpperCase());
+                  libraryLabel.setTextColor(android.graphics.Color.parseColor("#00BFFF"));
+                  adapter.setAddMode(true, position -> {
+                      TrackInfo t = displayedTracks.get(position);
+                      addTrackToPlaylist(plName, t);
+                      Toast.makeText(this, "Agregada: " + t.title, Toast.LENGTH_SHORT).show();
+                  });
+                  Button btnDone = new Button(this);
+                  btnDone.setText("✓ LISTO");
+                  btnDone.setTextColor(android.graphics.Color.BLACK);
+                  btnDone.setTextSize(12);
+                  btnDone.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                      android.graphics.Color.parseColor("#00FF00")));
+                  btnDone.setOnClickListener(v -> exitAddMode());
+                  LinearLayout root = (LinearLayout) playlistView.getParent();
+                  root.addView(btnDone, root.indexOfChild(libraryLabel));
+                  btnDone.setTag("done_btn");
+              }
+              private void exitAddMode() {
+                  addingToPlaylist = false;
+                  libraryLabel.setText("LISTA DE REPRODUCCIÓN");
+                  libraryLabel.setTextColor(android.graphics.Color.parseColor("#444444"));
+                  adapter.setAddMode(false, null);
+                  LinearLayout root = (LinearLayout) playlistView.getParent();
+                  View doneBtn = root.findViewWithTag("done_btn");
+                  if (doneBtn != null) root.removeView(doneBtn);
+                  savePlaylists();
+                  plAdapter.notifyDataSetChanged();
+              }
+              private void addTrackToPlaylist(String plName, TrackInfo t) {
+                  for (LyraPlaylist pl : playlists) {
+                      if (pl.name.equals(plName)) { pl.uris.add(t.uri.toString()); return; }
+                  }
+                  LyraPlaylist pl = new LyraPlaylist(plName);
+                  pl.uris.add(t.uri.toString());
+                  playlists.add(pl);
+              }
+              private void loadPlaylistIntoQueue(LyraPlaylist pl) {
+                  List<TrackInfo> plTracks = new ArrayList<>();
+                  for (String uriStr : pl.uris) {
+                      Uri uri = Uri.parse(uriStr);
+                      for (TrackInfo t : allTracks) {
+                          if (t.uri.equals(uri)) { plTracks.add(t); break; }
+                      }
+                  }
+                  if (plTracks.isEmpty()) { Toast.makeText(this, "Playlist vacía", Toast.LENGTH_SHORT).show(); return; }
+                  displayedTracks.clear();
+                  displayedTracks.addAll(plTracks);
+                  adapter.notifyDataSetChanged();
+                  libraryLabel.setText("▶ " + pl.name.toUpperCase() + " — " + plTracks.size() + " pistas");
+                  libraryLabel.setTextColor(android.graphics.Color.parseColor("#00FF00"));
+                  reloadQueue(0);
+                  closePlDrawer();
+              }
+              private void reloadQueue(int startIndex) {
+                  if (mediaController == null || displayedTracks.isEmpty()) return;
+                  List<MediaItem> items = displayedTracks.stream().map(t -> t.mediaItem).collect(Collectors.toList());
+                  mediaController.setMediaItems(items, startIndex, 0);
+                  mediaController.prepare();
+                  currentIndex = startIndex;
+                  updateUI(startIndex);
+              }
+              private void togglePlDrawer() {
+                  plDrawerVisible = !plDrawerVisible;
+                  plDrawer.setVisibility(plDrawerVisible ? View.VISIBLE : View.GONE);
+                  plScrim.setVisibility(plDrawerVisible ? View.VISIBLE : View.GONE);
+                  if (plDrawerVisible) plAdapter.notifyDataSetChanged();
+              }
+              private void closePlDrawer() {
+                  plDrawerVisible = false;
+                  plDrawer.setVisibility(View.GONE);
+                  plScrim.setVisibility(View.GONE);
+                  plNameBar.setVisibility(View.GONE);
+              }
+              private void cycleSort() {
+                  sortMode = (sortMode + 1) % 3;
+                  switch (sortMode) {
+                      case 0:
+                          Collections.sort(allTracks, Comparator.comparing(t -> t.title.toLowerCase()));
+                          btnSort.setText("AZ TÍTULO");
+                          break;
+                      case 1:
+                          Collections.sort(allTracks, Comparator.comparing(t -> t.artist.toLowerCase()));
+                          btnSort.setText("AZ ARTISTA");
+                          break;
+                      case 2:
+                          Collections.sort(allTracks, Comparator.comparing(t -> t.album.toLowerCase()));
+                          btnSort.setText("AZ ÁLBUM");
+                          break;
+                  }
+                  filterTracks(searchInput.getText().toString());
+                  reloadQueue(0);
+              }
+              private void toggleSearch() {
+                  searchVisible = !searchVisible;
+                  searchBar.setVisibility(searchVisible ? View.VISIBLE : View.GONE);
+                  btnSearch.setTextColor(searchVisible
+                      ? android.graphics.Color.parseColor("#00FF00")
+                      : android.graphics.Color.WHITE);
+                  if (searchVisible) {
+                      searchInput.requestFocus();
+                      InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                      imm.showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT);
+                  } else {
+                      searchInput.setText("");
+                      filterTracks("");
+                      hideSoftKeyboard();
+                  }
+              }
+              private void filterTracks(String query) {
+                  displayedTracks.clear();
+                  if (query.isEmpty()) {
+                      displayedTracks.addAll(allTracks);
+                      libraryLabel.setText("LISTA DE REPRODUCCIÓN");
+                      libraryLabel.setTextColor(android.graphics.Color.parseColor("#444444"));
+                  } else {
+                      String low = query.toLowerCase();
+                      for (TrackInfo t : allTracks) {
+                          if (t.title.toLowerCase().contains(low) || t.artist.toLowerCase().contains(low))
+                              displayedTracks.add(t);
+                      }
+                      libraryLabel.setText("RESULTADOS: " + displayedTracks.size());
+                      libraryLabel.setTextColor(android.graphics.Color.parseColor("#00BFFF"));
+                  }
+                  adapter.notifyDataSetChanged();
+              }
+              private void hideSoftKeyboard() {
+                  InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                  View focus = getCurrentFocus();
+                  if (focus != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+              }
+              private void savePlaylists() {
+                  try {
+                      JSONArray arr = new JSONArray();
+                      for (LyraPlaylist pl : playlists) {
+                          JSONObject obj = new JSONObject();
+                          obj.put("name", pl.name);
+                          JSONArray uriArr = new JSONArray();
+                          for (String u : pl.uris) uriArr.put(u);
+                          obj.put("uris", uriArr);
+                          arr.put(obj);
+                      }
+                      getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_PLAYLISTS, arr.toString()).apply();
+                  } catch (Exception ignored) {}
+              }
+              private void loadPlaylists() {
+                  playlists.clear();
+                  try {
+                      String json = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_PLAYLISTS, "[]");
+                      JSONArray arr = new JSONArray(json);
+                      for (int i = 0; i < arr.length(); i++) {
+                          JSONObject obj = arr.getJSONObject(i);
+                          LyraPlaylist pl = new LyraPlaylist(obj.getString("name"));
+                          JSONArray uriArr = obj.getJSONArray("uris");
+                          for (int j = 0; j < uriArr.length(); j++) pl.uris.add(uriArr.getString(j));
+                          playlists.add(pl);
+                      }
+                  } catch (Exception ignored) {}
+              }
+              private class PlaylistAdapter extends ArrayAdapter<LyraPlaylist> {
+                  public PlaylistAdapter() { super(MainActivity.this, 0, playlists); }
+                  @Override
+                  public View getView(int position, View convertView, ViewGroup parent) {
+                      if (convertView == null)
+                          convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_playlist, parent, false);
+                      LyraPlaylist pl = getItem(position);
+                      TextView name  = convertView.findViewById(R.id.pl_item_name);
+                      TextView count = convertView.findViewById(R.id.pl_item_count);
+                      Button delete  = convertView.findViewById(R.id.pl_item_delete);
+                      if (pl != null) {
+                          name.setText(pl.name);
+                          count.setText(pl.uris.size() + " pistas");
+                      }
+                      final int pos = position;
+                      delete.setOnClickListener(v -> {
+                          playlists.remove(pos);
+                          savePlaylists();
+                          notifyDataSetChanged();
+                      });
+                      return convertView;
+                  }
+              }
+              private void initEqUI() {
+                  if (eqInitialized || !serviceBound) return;
+                  eqInitialized = true;
+                  short numBands = lyraService.getNumBands();
+                  short[] range = lyraService.getBandLevelRange();
+                  for (short i = 0; i < Math.min(numBands, 5); i++) {
+                      int freqHz = lyraService.getBandFreq(i) / 1000;
+                      eqLabels[i].setText(freqHz >= 1000 ? (freqHz / 1000) + "kHz" : freqHz + "Hz");
+                      short current = lyraService.getBandLevel(i);
+                      int span = range[1] - range[0];
+                      int progress = span > 0 ? (int)(((current - range[0]) * 20.0f) / span) : 10;
+                      eqBands[i].setProgress(Math.max(0, Math.min(20, progress)));
+                      int db = current / 100;
+                      eqVals[i].setText((db >= 0 ? "+" : "") + db + "dB");
+                  }
+              }
+              private void checkPermissionAndLoad() {
+                  String perm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                      ? Manifest.permission.READ_MEDIA_AUDIO
+                      : Manifest.permission.READ_EXTERNAL_STORAGE;
+                  if (ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED)
+                      loadMediaStore();
+                  else permissionLauncher.launch(perm);
+              }
+              private void loadMediaStore() {
+                  allTracks.clear();
+                  displayedTracks.clear();
+                  new Thread(() -> {
+                      Uri collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                      String[] projection = {
+                          MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE,
+                          MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM,
+                          MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.SIZE,
+                          MediaStore.Audio.Media.MIME_TYPE
+                      };
+                      try (Cursor cursor = getContentResolver().query(collection, projection,
+                              MediaStore.Audio.Media.IS_MUSIC + " != 0", null,
+                              MediaStore.Audio.Media.TITLE + " ASC")) {
+                          if (cursor != null) {
+                              int idC  = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID);
+                              int titC = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE);
+                              int artC = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST);
+                              int albC = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM);
+                              int durC = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION);
+                              int sizC = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SIZE);
+                              int mimC = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE);
+                              while (cursor.moveToNext()) {
+                                  long id     = cursor.getLong(idC);
+                                  String tit  = cursor.getString(titC);
+                                  String art  = cursor.getString(artC);
+                                  String alb  = cursor.getString(albC);
+                                  long durMs  = cursor.getLong(durC);
+                                  long sizeKb = cursor.getLong(sizC) / 1024;
+                                  String mime = cursor.getString(mimC);
+                                  String ext  = mime != null ? mime.substring(mime.lastIndexOf("/") + 1).toUpperCase() : "AUDIO";
+                                  String meta = ext + " | " + String.format(Locale.US, "%.1f MB", sizeKb / 1024.0);
+                                  Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(id));
+                                  if (tit == null || tit.isEmpty()) tit = "Sin título";
+                                  if (art == null) art = "";
+                                  if (alb == null) alb = "";
+                                  allTracks.add(new TrackInfo(MediaItem.fromUri(uri), tit, art, alb, meta, formatTime(durMs), null, uri));
+                              }
+                          }
+                      } catch (Exception ignored) {}
+                      runOnUiThread(() -> {
+                          displayedTracks.addAll(allTracks);
+                          adapter.notifyDataSetChanged();
+                          if (!displayedTracks.isEmpty()) {
+                              int saved = getSharedPreferences(PREFS, MODE_PRIVATE).getInt(KEY_INDEX, 0);
+                              int start = Math.min(saved, displayedTracks.size() - 1);
+                              trackNumber.setText("LIBRERÍA: " + allTracks.size() + " pistas");
+                              List<MediaItem> items = displayedTracks.stream().map(t -> t.mediaItem).collect(Collectors.toList());
+                              mediaController.setMediaItems(items, start, 0);
+                              mediaController.prepare();
+                              currentIndex = start;
+                              updateUI(start);
+                          } else {
+                              trackTitle.setText("Sin música encontrada");
+                          }
+                      });
+                  }).start();
+              }
+              private void loadAlbumArt(int index) {
+                  if (index < 0 || index >= displayedTracks.size()) return;
+                  TrackInfo t = displayedTracks.get(index);
+                  if (t.albumArt != null) { albumArt.setImageBitmap(t.albumArt); return; }
+                  new Thread(() -> {
+                      Bitmap art = null;
+                      try {
+                          MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                          mmr.setDataSource(getApplicationContext(), t.uri);
+                          byte[] bytes = mmr.getEmbeddedPicture();
+                          mmr.release();
+                          if (bytes != null) art = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                      } catch (Exception ignored) {}
+                      final Bitmap finalArt = art;
+                      t.albumArt = finalArt;
+                      runOnUiThread(() -> {
+                          if (currentIndex == index) {
+                              if (finalArt != null) albumArt.setImageBitmap(finalArt);
+                              else albumArt.setImageResource(android.R.drawable.ic_media_play);
+                          }
+                      });
+                  }).start();
+              }
+              private void updateUI(int index) {
+                  if (index < 0 || index >= displayedTracks.size()) return;
+                  currentIndex = index;
+                  TrackInfo t = displayedTracks.get(index);
+                  trackTitle.setText(t.title);
+                  trackArtist.setText(t.artist.isEmpty() ? "Artista desconocido" : t.artist);
+                  trackAlbum.setText(t.album);
+                  trackMeta.setText(t.meta);
+                  trackNumber.setText((index + 1) + " / " + displayedTracks.size());
+                  timeCurrent.setText("0:00");
+                  timeTotal.setText(t.duration.isEmpty() ? "0:00" : t.duration);
+                  seekBar.setProgress(0);
+                  albumArt.setImageResource(android.R.drawable.ic_media_play);
+                  adapter.setCurrentIndex(index);
+                  playlistView.smoothScrollToPosition(index);
+                  loadAlbumArt(index);
+                  getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt(KEY_INDEX, index).apply();
+              }
+              private void playAt(int index) {
+                  if (index < 0 || index >= displayedTracks.size() || mediaController == null) return;
+                  mediaController.seekToDefaultPosition(index);
+                  mediaController.play();
+                  updateUI(index);
+              }
+              private void advanceTrack(int direction) {
+                  if (displayedTracks.isEmpty()) return;
+                  if (repeatMode == 2) { playAt(currentIndex); return; }
+                  int next = currentIndex + direction;
+                  if (next >= displayedTracks.size()) next = repeatMode == 1 ? 0 : -1;
+                  if (next < 0) next = repeatMode == 1 ? displayedTracks.size() - 1 : -1;
+                  if (next >= 0) playAt(next);
+              }
+              private void toggleShuffle() {
+                  Collections.shuffle(displayedTracks);
+                  adapter.notifyDataSetChanged();
+                  reloadQueue(0);
+                  btnShuffle.setTextColor(android.graphics.Color.parseColor("#00FF00"));
+              }
+              private void cycleRepeat() {
+                  repeatMode = (repeatMode + 1) % 3;
+                  switch (repeatMode) {
+                      case 0: btnRepeat.setText("↺"); btnRepeat.setTextColor(android.graphics.Color.parseColor("#555555")); break;
+                      case 1: btnRepeat.setText("↺"); btnRepeat.setTextColor(android.graphics.Color.parseColor("#00FF00")); break;
+                      case 2: btnRepeat.setText("↻"); btnRepeat.setTextColor(android.graphics.Color.parseColor("#00BFFF")); break;
+                  }
+              }
+              private String formatTime(long ms) {
+                  long s = ms / 1000;
+                  return String.format(Locale.US, "%d:%02d", s / 60, s % 60);
+              }
+              @Override
+              protected void onDestroy() {
+                  super.onDestroy();
+                  handler.removeCallbacks(updateProgress);
+                  if (serviceBound) { unbindService(eqConnection); serviceBound = false; }
+                  MediaController.releaseFuture(controllerFuture);
+              }
+          }
+          JAVAEOF
+          <<EOF > settings.gradle
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = 'LyraAudio'
+          include ':app'
+          EOF
+
+          echo "buildscript { repositories { google(); mavenCentral() } }" > build.gradle
+
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' version '8.2.0' }
+          android {
+              namespace 'com.lyra.audiokernel'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.lyra.audiokernel'
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 8
+                  versionName '1.7'
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
+              implementation 'androidx.documentfile:documentfile:1.0.1'
+              implementation 'androidx.media3:media3-exoplayer:1.2.0'
+              implementation 'androidx.media3:media3-common:1.2.0'
+              implementation 'androidx.media3:media3-session:1.2.0'
+              implementation 'com.google.guava:guava:32.1.3-android'
+          }
+          EOF
+
+      - name: Master Compilation
+        run: |
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Deliver Lyra v1.7
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyra-v1.7-Fix
+          path: "app/build/outputs/apk/debug/*.apk"
