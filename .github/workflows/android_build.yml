@@ -81,7 +81,6 @@ jobs:
           import android.content.Intent;
           import android.net.Uri;
           import android.os.Bundle;
-          import android.provider.DocumentsContract;
           import android.widget.Button;
           import android.widget.TextView;
           import androidx.activity.result.ActivityResultLauncher;
@@ -89,6 +88,7 @@ jobs:
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.documentfile.provider.DocumentFile;
           import androidx.media3.common.MediaItem;
+          import androidx.media3.common.Player;
           import androidx.media3.exoplayer.ExoPlayer;
           import java.util.ArrayList;
           import java.util.List;
@@ -119,6 +119,18 @@ jobs:
                   Button btnSelect = findViewById(R.id.btn_select);
                   Button btnPrev = findViewById(R.id.btn_prev);
                   Button btnNext = findViewById(R.id.btn_next);
+
+                  player.addListener(new Player.Listener() {
+                      @Override
+                      public void onPlaybackStateChanged(int state) {
+                          if (state == Player.STATE_ENDED) {
+                              if (currentIndex < playlist.size() - 1) {
+                                  currentIndex++;
+                                  playAt(currentIndex);
+                              }
+                          }
+                      }
+                  });
 
                   btnSelect.setOnClickListener(v -> folderPickerLauncher.launch(null));
 
@@ -167,6 +179,7 @@ jobs:
               }
 
               private void playAt(int index) {
+                  player.stop();
                   player.setMediaItem(playlist.get(index));
                   player.prepare();
                   player.play();
