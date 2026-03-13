@@ -21,12 +21,10 @@ jobs:
 
       - name: Master Compilation
         run: |
-          chmod +x gradlew
-          ./gradlew :app:assembleDebug --stacktrace
+          gradle :app:assembleDebug --stacktrace
 
       - name: Deliver Lyra Industrial v1.8
         uses: actions/upload-artifact@v4
         with:
           name: Lyra-v1.8-Industrial
           path: "app/build/outputs/apk/debug/*.apk"
-
