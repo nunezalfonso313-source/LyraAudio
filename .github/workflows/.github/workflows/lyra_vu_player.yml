@@ -1,0 +1,220 @@
+name: lyra-vu-player
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android
+        uses: android-actions/setup-android@v3
+
+      - name: Create Project
+        run: |
+
+          mkdir -p app/src/main/java/com/lyra/player
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+
+          echo "rootProject.name='LyraVU'" > settings.gradle
+
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' }
+
+          android {
+              namespace "com.lyra.player"
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "com.lyra.player"
+                  minSdk 26
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+          }
+          EOF
+
+      - name: Layout
+        run: |
+
+          cat <<EOF > app/src/main/res/layout/activity_main.xml
+          <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#101214">
+
+              <LinearLayout
+                  android:orientation="vertical"
+                  android:gravity="center"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent">
+
+                  <TextView
+                      android:id="@+id/time"
+                      android:text="00:00"
+                      android:textSize="50sp"
+                      android:textColor="#ff9933"/>
+
+                  <com.lyra.player.VUMeter
+                      android:layout_width="300dp"
+                      android:layout_height="120dp"/>
+
+                  <com.lyra.player.SpectrumView
+                      android:layout_width="match_parent"
+                      android:layout_height="200dp"/>
+
+                  <LinearLayout
+                      android:orientation="horizontal">
+
+                      <Button android:text="⏮"/>
+                      <Button android:text="▶"/>
+                      <Button android:text="⏭"/>
+
+                  </LinearLayout>
+
+              </LinearLayout>
+
+          </FrameLayout>
+          EOF
+
+      - name: Activity
+        run: |
+
+          cat <<EOF > app/src/main/java/com/lyra/player/MainActivity.java
+          package com.lyra.player;
+
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.os.Handler;
+          import android.widget.TextView;
+
+          public class MainActivity extends Activity {
+
+              Handler h=new Handler();
+              int s=0;
+
+              public void onCreate(Bundle b){
+                  super.onCreate(b);
+                  setContentView(R.layout.activity_main);
+
+                  TextView t=findViewById(R.id.time);
+
+                  h.postDelayed(new Runnable(){
+                      public void run(){
+                          s++;
+                          int m=s/60;
+                          int ss=s%60;
+                          t.setText(String.format("%02d:%02d",m,ss));
+                          h.postDelayed(this,1000);
+                      }
+                  },1000);
+              }
+          }
+          EOF
+
+      - name: VU Meter
+        run: |
+
+          cat <<EOF > app/src/main/java/com/lyra/player/VUMeter.java
+          package com.lyra.player;
+
+          import android.content.Context;
+          import android.graphics.*;
+          import android.util.AttributeSet;
+          import android.view.View;
+          import java.util.Random;
+
+          public class VUMeter extends View {
+
+              Paint p=new Paint();
+              Random r=new Random();
+
+              public VUMeter(Context c,AttributeSet a){super(c,a);}
+
+              protected void onDraw(Canvas c){
+
+                  int cx=getWidth()/2;
+                  int cy=getHeight();
+
+                  p.setColor(Color.YELLOW);
+                  p.setStrokeWidth(8);
+
+                  float ang=-45+r.nextFloat()*90;
+
+                  c.save();
+                  c.rotate(ang,cx,cy);
+                  c.drawLine(cx,cy,cx,cy-150,p);
+                  c.restore();
+
+                  postInvalidateDelayed(80);
+              }
+          }
+          EOF
+
+      - name: Spectrum
+        run: |
+
+          cat <<EOF > app/src/main/java/com/lyra/player/SpectrumView.java
+          package com.lyra.player;
+
+          import android.content.Context;
+          import android.graphics.*;
+          import android.util.AttributeSet;
+          import android.view.View;
+          import java.util.Random;
+
+          public class SpectrumView extends View {
+
+              Paint p=new Paint();
+              Random r=new Random();
+
+              public SpectrumView(Context c,AttributeSet a){super(c,a);}
+
+              protected void onDraw(Canvas canvas){
+
+                  int bars=32;
+                  int w=getWidth()/bars;
+
+                  for(int i=0;i<bars;i++){
+
+                      int h=r.nextInt(getHeight());
+
+                      p.setColor(Color.CYAN);
+
+                      canvas.drawRect(i*w,getHeight()-h,(i+1)*w,getHeight(),p);
+                  }
+
+                  postInvalidateDelayed(60);
+              }
+          }
+          EOF
+
+      - name: Build APK
+        run: |
+          wget https://services.gradle.org/distributions/gradle-8.6-bin.zip
+          unzip gradle-8.6-bin.zip
+          ./gradle-8.6/bin/gradle assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lyra-vu-apk
+          path: app/build/outputs/apk/debug/*.apk
