@@ -1,0 +1,300 @@
+name: Build Lyra Industrial v1.8
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: AEGIS - v1.8 Industrial Ignition
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
+          mkdir -p app/src/main/java/com/lyra/audiokernel
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+              <application
+                  android:allowBackup="true"
+                  android:label="Lyra Industrial"
+                  android:theme="@style/Theme.AppCompat.NoActionBar">
+                  <activity android:name="com.lyra.audiokernel.MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <service android:name="com.lyra.audiokernel.LyraPlaybackService" android:foregroundServiceType="mediaPlayback" android:exported="false">
+                      <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
+
+          cat <<EOF > app/src/main/res/values/styles.xml
+          <resources>
+              <style name="Theme.AppCompat.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar" />
+              <style name="NixieDigit">
+                  <item name="android:layout_width">wrap_content</item>
+                  <item name="android:layout_height">wrap_content</item>
+                  <item name="android:textColor">#FF8800</item>
+                  <item name="android:textSize">34sp</item>
+                  <item name="android:fontFamily">monospace</item>
+                  <item name="android:shadowColor">#FF4400</item>
+                  <item name="android:shadowRadius">12</item>
+              </style>
+          </resources>
+          EOF
+
+          cat <<EOF > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.coordinatorlayout.widget.CoordinatorLayout
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#050505">
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:orientation="vertical">
+                  
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="110dp"
+                      android:orientation="horizontal"
+                      android:background="#111111">
+                      <com.lyra.audiokernel.VUMeterView android:id="@+id/vu_left" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+                      <com.lyra.audiokernel.VUMeterView android:id="@+id/vu_right" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+                  </LinearLayout>
+
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:padding="12dp"
+                      android:background="#0D0D0D">
+                      <ImageView android:id="@+id/album_art" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerCrop" android:background="#1A1A1A"/>
+                      <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingStart="12dp">
+                          <TextView android:id="@+id/track_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" android:singleLine="true"/>
+                          <TextView android:id="@+id/track_artist" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BFFF" android:textSize="13sp" android:singleLine="true"/>
+                          <TextView android:id="@+id/track_meta" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="11sp"/>
+                      </LinearLayout>
+                  </LinearLayout>
+
+                  <LinearLayout
+                      android:id="@+id/nixie_container"
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:layout_gravity="center"
+                      android:orientation="horizontal"
+                      android:background="#050505"
+                      android:padding="8dp">
+                      <TextView android:id="@+id/nixie_m1" style="@style/NixieDigit" android:text="0" />
+                      <TextView android:id="@+id/nixie_m2" style="@style/NixieDigit" android:text="0" />
+                      <TextView style="@style/NixieDigit" android:text=":" android:alpha="0.5" />
+                      <TextView android:id="@+id/nixie_s1" style="@style/NixieDigit" android:text="0" />
+                      <TextView android:id="@+id/nixie_s2" style="@style/NixieDigit" android:text="0" />
+                  </LinearLayout>
+
+                  <SeekBar android:id="@+id/seek_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                  
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal" android:gravity="center" android:background="#0D0D0D">
+                      <Button android:id="@+id/btn_shuffle" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:text="⇀" android:background="@android:color/transparent"/>
+                      <Button android:id="@+id/btn_prev" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:text="⏮" android:background="@android:color/transparent"/>
+                      <Button android:id="@+id/btn_play" android:layout_width="0dp" android:layout_weight="1.2" android:layout_height="match_parent" android:text="▶" android:background="@android:color/transparent" android:textColor="#00FF00" android:textSize="24sp"/>
+                      <Button android:id="@+id/btn_next" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:text="⏭" android:background="@android:color/transparent"/>
+                      <Button android:id="@+id/btn_repeat" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:text="↺" android:background="@android:color/transparent"/>
+                  </LinearLayout>
+
+                  <ListView android:id="@+id/playlist_view" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:divider="#1A1A1A" android:dividerHeight="1dp"/>
+              </LinearLayout>
+          </androidx.coordinatorlayout.widget.CoordinatorLayout>
+          EOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/VUMeterView.java
+          package com.lyra.audiokernel;
+          import android.content.Context;
+          import android.graphics.*;
+          import android.util.AttributeSet;
+          import android.view.View;
+          public class VUMeterView extends View {
+              private float currentLevel = 0f, targetLevel = 0f;
+              private Paint pArc = new Paint(Paint.ANTI_ALIAS_FLAG), pNeedle = new Paint(Paint.ANTI_ALIAS_FLAG);
+              public VUMeterView(Context c, AttributeSet a) {
+                  super(c, a);
+                  pArc.setColor(Color.parseColor("#332200")); pArc.setStyle(Paint.Style.STROKE); pArc.setStrokeWidth(4f);
+                  pNeedle.setColor(Color.parseColor("#FF8800")); pNeedle.setStrokeWidth(6f); pNeedle.setStrokeCap(Paint.Cap.ROUND);
+              }
+              public void updateLevel(float level) {
+                  this.targetLevel = level;
+                  this.currentLevel += (targetLevel - currentLevel) * 0.2f; 
+                  postInvalidateOnAnimation();
+              }
+              @Override protected void onDraw(Canvas cv) {
+                  float cx = getWidth()/2f, cy = getHeight()*0.9f, r = getWidth()*0.8f;
+                  cv.drawArc(new RectF(cx-r, cy-r, cx+r, cy+r), 210, 120, false, pArc);
+                  float angle = 210 + (currentLevel * 120);
+                  cv.drawLine(cx, cy, (float)(cx+Math.cos(Math.toRadians(angle))*r), (float)(cy+Math.sin(Math.toRadians(angle))*r), pNeedle);
+              }
+          }
+          JAVAEOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
+          package com.lyra.audiokernel;
+          import android.content.Intent;
+          import android.os.Binder;
+          import android.os.IBinder;
+          import androidx.media3.exoplayer.ExoPlayer;
+          import androidx.media3.session.MediaSession;
+          import androidx.media3.session.MediaSessionService;
+          public class LyraPlaybackService extends MediaSessionService {
+              private MediaSession session; private ExoPlayer player;
+              private final LyraBinder binder = new LyraBinder();
+              public class LyraBinder extends Binder { public LyraPlaybackService getService() { return LyraPlaybackService.this; } }
+              @Override public IBinder onBind(Intent i) { if ("lyra.eq.bind".equals(i.getAction())) return binder; return super.onBind(i); }
+              @Override public void onCreate() {
+                  super.onCreate();
+                  player = new ExoPlayer.Builder(this).build();
+                  session = new MediaSession.Builder(this, player).build();
+              }
+              public int getAudioSessionId() { return player.getAudioSessionId(); }
+              @Override public MediaSession onGetSession(MediaSession.ControllerInfo c) { return session; }
+              @Override public void onDestroy() { player.release(); session.release(); super.onDestroy(); }
+          }
+          JAVAEOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
+          package com.lyra.audiokernel;
+          import android.Manifest;
+          import android.content.*;
+          import android.graphics.Bitmap;
+          import android.media.audiofx.Visualizer;
+          import android.os.*;
+          import android.provider.MediaStore;
+          import android.widget.*;
+          import androidx.appcompat.app.AppCompatActivity;
+          import androidx.media3.common.MediaItem;
+          import androidx.media3.common.Player;
+          import androidx.media3.session.MediaController;
+          import androidx.media3.session.SessionToken;
+          import com.google.common.util.concurrent.ListenableFuture;
+          import com.google.common.util.concurrent.MoreExecutors;
+          import java.util.*;
+
+          public class MainActivity extends AppCompatActivity {
+              private MediaController controller;
+              private VUMeterView vuL, vuR;
+              private TextView n1, n2, n3, n4;
+              private Visualizer visualizer;
+              private final Handler handler = new Handler(Looper.getMainLooper());
+
+              @Override protected void onCreate(Bundle b) {
+                  super.onCreate(b); setContentView(R.layout.activity_main);
+                  vuL = findViewById(R.id.vu_left); vuR = findViewById(R.id.vu_right);
+                  n1 = findViewById(R.id.nixie_m1); n2 = findViewById(R.id.nixie_m2);
+                  n3 = findViewById(R.id.nixie_s1); n4 = findViewById(R.id.nixie_s2);
+                  
+                  SessionToken token = new SessionToken(this, new ComponentName(this, LyraPlaybackService.class));
+                  ListenableFuture<MediaController> future = new MediaController.Builder(this, token).buildAsync();
+                  future.addListener(() -> {
+                      try {
+                          controller = future.get();
+                          setupVisualizer(controller.getAudioSessionId());
+                          checkPerms();
+                      } catch (Exception ignored) {}
+                  }, MoreExecutors.directExecutor());
+                  handler.post(updateUI);
+              }
+
+              private void setupVisualizer(int sessionId) {
+                  if (visualizer != null) visualizer.release();
+                  visualizer = new Visualizer(sessionId);
+                  visualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
+                  visualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
+                      @Override public void onWaveFormDataCapture(Visualizer v, byte[] bytes, int rate) {
+                          float peak = 0; for (byte b : bytes) peak = Math.max(peak, Math.abs(b));
+                          runOnUiThread(() -> { vuL.updateLevel(peak/128f); vuR.updateLevel((peak/128f)*0.9f); });
+                      }
+                      @Override public void onFftDataCapture(Visualizer v, byte[] b, int r) {}
+                  }, Visualizer.getMaxCaptureRate()/2, true, false);
+                  visualizer.setEnabled(true);
+              }
+
+              private final Runnable updateUI = new Runnable() {
+                  @Override public void run() {
+                      if (controller != null && controller.isPlaying()) {
+                          long pos = controller.getCurrentPosition();
+                          int m = (int)(pos/60000), s = (int)((pos%60000)/1000);
+                          n1.setText(String.valueOf(m/10)); n2.setText(String.valueOf(m%10));
+                          n3.setText(String.valueOf(s/10)); n4.setText(String.valueOf(s%10));
+                      }
+                      handler.postDelayed(this, 100);
+                  }
+              };
+
+              private void checkPerms() {
+                  if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != 0 || 
+                      checkSelfPermission(Manifest.permission.RECORD_AUDIO) != 0) {
+                      requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.RECORD_AUDIO}, 1);
+                  }
+              }
+
+              @Override protected void onDestroy() { 
+                  if (visualizer != null) visualizer.release();
+                  super.onDestroy(); 
+              }
+          }
+          JAVAEOF
+
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' version '8.2.0' }
+          android { 
+              namespace 'com.lyra.audiokernel'
+              compileSdk 34
+              defaultConfig { 
+                  applicationId 'com.lyra.audiokernel'
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 10
+                  versionName '1.8' 
+              } 
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
+              implementation 'androidx.media3:media3-exoplayer:1.2.0'
+              implementation 'androidx.media3:media3-common:1.2.0'
+              implementation 'androidx.media3:media3-session:1.2.0'
+              implementation 'com.google.guava:guava:32.1.3-android'
+          }
+          EOF
+
+          echo "include ':app'" > settings.gradle
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Deliver Lyra Industrial v1.8
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyra-v1.8-Industrial
+          path: "app/build/outputs/apk/debug/*.apk"
+
