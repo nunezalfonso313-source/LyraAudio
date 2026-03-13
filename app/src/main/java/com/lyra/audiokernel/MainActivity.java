@@ -2,72 +2,71 @@ package com.lyra.audiokernel;
 
 import android.Manifest;
 import android.content.ComponentName;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.media.audiofx.Visualizer;
-import android.os.*;
-import android.widget.TextView;
+import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.media3.session.MediaController;
 import androidx.media3.session.SessionToken;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 
 public class MainActivity extends AppCompatActivity {
-    private MediaController controller;
-    private VUMeterView vuL, vuR;
-    private TextView n1, n2, n3, n4;
     private Visualizer visualizer;
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private VUMeterView vuL, vuR;
 
-    @Override protected void onCreate(Bundle b) {
-        super.onCreate(b); 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
-        vuL = findViewById(R.id.vu_left); vuR = findViewById(R.id.vu_right);
-        n1 = findViewById(R.id.nixie_m1); n2 = findViewById(R.id.nixie_m2);
-        n3 = findViewById(R.id.nixie_s1); n4 = findViewById(R.id.nixie_s2);
 
-        SessionToken t = new SessionToken(this, new ComponentName(this, LyraPlaybackService.class));
-        ListenableFuture<MediaController> f = new MediaController.Builder(this, t).buildAsync();
-        f.addListener(() -> {
-            try {
-                controller = f.get();
-                if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == 0) startVisualizer();
-                else requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 1);
-            } catch (Exception ignored) {}
-        }, MoreExecutors.directExecutor());
-        
-        handler.post(updateNixie);
-    }
+        vuL = findViewById(R.id.vu_left);
+        vuR = findViewById(R.id.vu_right);
 
-    private void startVisualizer() {
-        visualizer = new Visualizer(0); // Audio Global
-        visualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
-        visualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
-            @Override public void onWaveFormDataCapture(Visualizer v, byte[] b, int r) {
-                float peak = 0; for (byte x : b) peak = Math.max(peak, Math.abs(x));
-                runOnUiThread(() -> { 
-                    vuL.updateLevel(peak/128f); 
-                    vuR.updateLevel((peak/128f) * 0.95f); 
-                });
-            }
-            @Override public void onFftDataCapture(Visualizer v, byte[] b, int r) {}
-        }, Visualizer.getMaxCaptureRate() / 2, true, false);
-        visualizer.setEnabled(true);
-    }
-
-    private final Runnable updateNixie = new Runnable() {
-        @Override public void run() {
-            if (controller != null && controller.isPlaying()) {
-                long p = controller.getCurrentPosition();
-                int m = (int)(p/60000), s = (int)((p%60000)/1000);
-                n1.setText(String.valueOf(m/10)); n2.setText(String.valueOf(m%10));
-                n3.setText(String.valueOf(s/10)); n4.setText(String.valueOf(s%10));
-            }
-            handler.postDelayed(this, 150);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 101);
+        } else {
+            initAudioEngine();
         }
-    };
+    }
 
-    @Override protected void onDestroy() {
+    private void initAudioEngine() {
+        SessionToken sessionToken = new SessionToken(this, new ComponentName(this, LyraPlaybackService.class));
+        ListenableFuture<MediaController> controllerFuture = new MediaController.Builder(this, sessionToken).buildAsync();
+        
+        controllerFuture.addListener(() -> {
+            try {
+                visualizer = new Visualizer(0);
+                visualizer.setCaptureSize(Visualizer.getCaptureSizeRange()[1]);
+                
+                // Referencias finales para la Lambda (Corrección de error 1000141634)
+                final VUMeterView finalVuL = vuL;
+                final VUMeterView finalVuR = vuR;
+
+                visualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
+                    @Override
+                    public void onWaveFormDataCapture(Visualizer v, byte[] bytes, int samplingRate) {
+                        float peak = 0;
+                        for (byte b : bytes) peak = Math.max(peak, Math.abs(b));
+                        if (finalVuL != null) finalVuL.updateLevel(peak / 128f);
+                        if (finalVuR != null) finalVuR.updateLevel((peak / 128f) * 0.95f);
+                    }
+
+                    @Override
+                    public void onFftDataCapture(Visualizer v, byte[] bytes, int samplingRate) {}
+                }, Visualizer.getMaxCaptureRate() / 2, true, false);
+
+                visualizer.setEnabled(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, MoreExecutors.directExecutor());
+    }
+
+    @Override
+    protected void onDestroy() {
         if (visualizer != null) visualizer.release();
         super.onDestroy();
     }
