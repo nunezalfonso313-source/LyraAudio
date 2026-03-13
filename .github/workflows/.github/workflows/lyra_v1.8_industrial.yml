@@ -1,4 +1,4 @@
-name: Lyra Build
+name: Lyra_Omega_Ignition
 
 on:
   push:
@@ -12,21 +12,164 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup JDK 17
+      - name: Install JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
 
-      - name: Setup Android SDK
+      - name: Install Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
+      - name: Lyra Kernel Build
+        run: |
 
-      - name: Build Debug APK
-        run: ./gradlew assembleDebug --stacktrace
+          # limpiar workspace
+          find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
+
+          # instalar gradle compatible
+          wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
+          unzip -q gradle-8.5-bin.zip
+          export PATH=$PWD/gradle-8.5/bin:$PATH
+
+          # estructura android
+          mkdir -p app/src/main/java/com/lyra/audiokernel
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
+
+          # settings.gradle
+          cat <<EOF > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "LyraAudio"
+          include(":app")
+          EOF
+
+          # gradle.properties
+          cat <<EOF > gradle.properties
+          org.gradle.jvmargs=-Xmx2g
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
+
+          # build.gradle raiz
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath "com.android.tools.build:gradle:8.1.4"
+              }
+          }
+
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+
+          # build.gradle app
+          cat <<EOF > app/build.gradle
+          apply plugin: "com.android.application"
+
+          android {
+              namespace "com.lyra.audiokernel"
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "com.lyra.audiokernel"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+
+          dependencies {
+              implementation "androidx.appcompat:appcompat:1.6.1"
+          }
+          EOF
+
+          # AndroidManifest
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.lyra.audiokernel">
+
+              <application
+                  android:label="Lyra Ind"
+                  android:theme="@style/Theme.AppCompat.NoActionBar">
+
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+
+                  </activity>
+
+              </application>
+
+          </manifest>
+          EOF
+
+          # MainActivity
+          cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
+          package com.lyra.audiokernel;
+
+          import android.os.Bundle;
+          import androidx.appcompat.app.AppCompatActivity;
+
+          public class MainActivity extends AppCompatActivity {
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+              }
+
+          }
+          EOF
+
+          # styles
+          cat <<EOF > app/src/main/res/values/styles.xml
+          <resources>
+              <style name="Theme.AppCompat.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar"/>
+          </resources>
+          EOF
+
+          # layout
+          cat <<EOF > app/src/main/res/layout/activity_main.xml
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#000"/>
+          EOF
+
+          # compilar apk
+          gradle assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
