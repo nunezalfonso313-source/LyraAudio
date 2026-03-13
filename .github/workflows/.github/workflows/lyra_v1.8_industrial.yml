@@ -3,7 +3,7 @@ on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # Forzamos una imagen estable
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -14,59 +14,49 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS_Ignition_Final
+      - name: Force Gradle Version
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.5 # Forzamos el motor compatible
+
+      - name: AEGIS_Ignition_Total
         run: |
-          # 1. Limpieza y Generación de Motor en Aislamiento
+          # 1. Limpieza y creación de rutas
           find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
-          gradle wrapper --gradle-version 8.5
-          chmod +x gradlew
-
-          # 2. Configuración de Cimientos (Settings con repositorios explícitos)
-          cat <<EOF > settings.gradle
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
-          }
-          rootProject.name = "LyraAudio"
-          include ':app'
-          EOF
-
-          # 3. Creación de Estructura Industrial
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
 
-          # 4. Inyección del Manifiesto de Autoridad
-          cat <<EOF > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <application android:label="Lyra Industrial" android:theme="@style/Theme.AppCompat.NoActionBar">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-                  <service android:name=".LyraPlaybackService" android:foregroundServiceType="mediaPlayback" android:exported="false">
-                      <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
-                  </service>
-              </application>
-          </manifest>
+          # 2. Settings de Autoridad
+          cat <<EOF > settings.gradle
+          rootProject.name = "LyraAudio"
+          include ':app'
           EOF
 
-          # 5. App Build Gradle (Sintaxis de compatibilidad absoluta)
+          # 3. Build Gradle Raíz (Estructura de compatibilidad Legacy)
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
+          EOF
+
+          # 4. App Build Gradle (Sin bloque de plugins para evitar fallos de Gradle 9)
           cat <<EOF > app/build.gradle
-          plugins { id 'com.android.application' version '8.2.0' }
+          apply plugin: 'com.android.application'
           android {
               namespace 'com.lyra.audiokernel'
               compileSdk 34
-              defaultConfig { applicationId 'com.lyra.audiokernel'; minSdk 24; targetSdk 34; versionCode 12; versionName '1.8' }
+              defaultConfig { 
+                  applicationId 'com.lyra.audiokernel'
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 13
+                  versionName '1.8' 
+              }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -76,12 +66,27 @@ jobs:
           }
           EOF
 
-          # 6. Clases Java Mínimas para Ignición (MainActivity + Service)
-          echo "package com.lyra.audiokernel; import android.os.Bundle; import androidx.appcompat.app.AppCompatActivity; public class MainActivity extends AppCompatActivity { protected void onCreate(Bundle b) { super.onCreate(b); } }" > app/src/main/java/com/lyra/audiokernel/MainActivity.java
-          echo "package com.lyra.audiokernel; import androidx.media3.session.*; public class LyraPlaybackService extends MediaSessionService { public MediaSession onGetSession(MediaSession.ControllerInfo c) { return null; } }" > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
+          # 5. Manifiesto y Código de Ignición
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <application android:label="Lyra Ind" android:theme="@style/Theme.AppCompat.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+                  </activity>
+                  <service android:name=".LyraPlaybackService" android:foregroundServiceType="mediaPlayback" android:exported="false">
+                      <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
 
-          # 7. Ejecución de Compilación con el motor validado (gradlew)
-          ./gradlew :app:assembleDebug --stacktrace
+          echo "package com.lyra.audiokernel; import android.os.Bundle; import androidx.appcompat.app.AppCompatActivity; public class MainActivity extends AppCompatActivity { protected void onCreate(Bundle b) { super.onCreate(b); setContentView(R.layout.activity_main); } }" > app/src/main/java/com/lyra/audiokernel/MainActivity.java
+          echo "package com.lyra.audiokernel; import androidx.media3.session.*; public class LyraPlaybackService extends MediaSessionService { public MediaSession onGetSession(MediaSession.ControllerInfo c) { return null; } }" > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
+          echo "<LinearLayout xmlns:android='http://schemas.android.com/apk/res/android' android:layout_width='match_parent' android:layout_height='match_parent' android:background='#000'></LinearLayout>" > app/src/main/res/layout/activity_main.xml
+
+          # 6. Compilación Directa
+          gradle :app:assembleDebug --stacktrace
 
       - name: Deliver Lyra Industrial v1.8
         uses: actions/upload-artifact@v4
