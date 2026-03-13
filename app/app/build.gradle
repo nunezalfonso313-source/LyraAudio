@@ -7,8 +7,8 @@ android {
         applicationId "com.lyra.audiokernel"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0-INDUSTRIAL"
+        versionCode 7
+        versionName "7.0-INDUSTRIAL"
     }
 }
 
