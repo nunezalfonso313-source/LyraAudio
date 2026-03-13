@@ -9,63 +9,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install JDK
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Install Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Lyra Kernel Build
+      - name: Build Lyra
         run: |
 
           # limpiar workspace
           find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
 
-          # instalar gradle compatible
+          # instalar gradle estable
           wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
           unzip -q gradle-8.5-bin.zip
           export PATH=$PWD/gradle-8.5/bin:$PATH
 
-          # estructura android
+          # estructura
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
 
           # settings.gradle
-          cat <<EOF > settings.gradle
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
+          cat > settings.gradle <<'EOF'
           rootProject.name = "LyraAudio"
-          include(":app")
+          include ':app'
           EOF
 
           # gradle.properties
-          cat <<EOF > gradle.properties
+          cat > gradle.properties <<'EOF'
           org.gradle.jvmargs=-Xmx2g
           android.useAndroidX=true
           android.enableJetifier=true
           EOF
 
           # build.gradle raiz
-          cat <<EOF > build.gradle
+          cat > build.gradle <<'EOF'
           buildscript {
               repositories {
                   google()
@@ -85,8 +70,8 @@ jobs:
           EOF
 
           # build.gradle app
-          cat <<EOF > app/build.gradle
-          apply plugin: "com.android.application"
+          cat > app/build.gradle <<'EOF'
+          apply plugin: 'com.android.application'
 
           android {
               namespace "com.lyra.audiokernel"
@@ -111,13 +96,13 @@ jobs:
           }
           EOF
 
-          # AndroidManifest
-          cat <<EOF > app/src/main/AndroidManifest.xml
+          # manifest
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.lyra.audiokernel">
 
               <application
-                  android:label="Lyra Ind"
+                  android:label="LyraAudio"
                   android:theme="@style/Theme.AppCompat.NoActionBar">
 
                   <activity
@@ -136,39 +121,35 @@ jobs:
           </manifest>
           EOF
 
-          # MainActivity
-          cat <<EOF > app/src/main/java/com/lyra/audiokernel/MainActivity.java
+          # actividad
+          cat > app/src/main/java/com/lyra/audiokernel/MainActivity.java <<'EOF'
           package com.lyra.audiokernel;
 
           import android.os.Bundle;
           import androidx.appcompat.app.AppCompatActivity;
 
           public class MainActivity extends AppCompatActivity {
-
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
+              protected void onCreate(Bundle b) {
+                  super.onCreate(b);
               }
-
           }
           EOF
 
           # styles
-          cat <<EOF > app/src/main/res/values/styles.xml
+          cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
               <style name="Theme.AppCompat.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar"/>
           </resources>
           EOF
 
           # layout
-          cat <<EOF > app/src/main/res/layout/activity_main.xml
+          cat > app/src/main/res/layout/activity_main.xml <<'EOF'
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="#000"/>
+              android:layout_height="match_parent"/>
           EOF
 
-          # compilar apk
+          # build
           gradle assembleDebug --stacktrace
 
       - name: Upload APK
