@@ -1,4 +1,4 @@
-name: Build Lyra Industrial v1.8
+name: Lyra_Omega_Ignition
 on: [push, workflow_dispatch]
 
 jobs:
@@ -14,24 +14,25 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS_Omega_Ignition
+      - name: BYPASS_KERNEL_INJECTION
         run: |
-          # 1. Limpieza y Bypass de Motor
+          # 1. PURGA TOTAL Y DESCARGA DE MOTOR EXTERNO
           find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
-          
-          # Descarga manual del motor Gradle 8.5 para anular el bache 9.4.0
           wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
           unzip -q gradle-8.5-bin.zip
-          export PATH=$PWD/gradle-8.5/bin:$PATH
-          
-          # 2. Configuración de Cimientos
+          export GRADLE_HOME=$PWD/gradle-8.5
+          export PATH=$GRADLE_HOME/bin:$PATH
+
+          # 2. CREACIÓN DE ESTRUCTURA BLINDADA
           mkdir -p app/src/main/java/com/lyra/audiokernel app/src/main/res/layout app/src/main/res/values
-          
+
+          # 3. SETTINGS (Resolución de Repositorios Forzada)
           cat <<EOF > settings.gradle
           rootProject.name = "LyraAudio"
           include ':app'
           EOF
 
+          # 4. BUILD GRADLE RAÍZ (Legacy Path)
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -40,7 +41,7 @@ jobs:
           allprojects { repositories { google(); mavenCentral() } }
           EOF
 
-          # 3. App Build (Estructura de Compatibilidad)
+          # 5. APP BUILD GRADLE (Sintaxis 'apply plugin' para máxima compatibilidad)
           cat <<EOF > app/build.gradle
           apply plugin: 'com.android.application'
           android {
@@ -50,43 +51,29 @@ jobs:
                   applicationId 'com.lyra.audiokernel'
                   minSdk 24
                   targetSdk 34
-                  versionCode 16
-                  versionName '1.8' 
+                  versionCode 17
+                  versionName '1.8-OMEGA' 
               }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'androidx.media3:media3-exoplayer:1.2.0'
               implementation 'androidx.media3:media3-session:1.2.0'
-              implementation 'com.google.guava:guava:32.1.3-android'
           }
           EOF
 
-          # 4. Inyección de Manifiesto y Código de Autoridad
-          cat <<EOF > app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="Lyra Ind" android:theme="@style/Theme.AppCompat.NoActionBar">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
-                  </activity>
-                  <service android:name=".LyraPlaybackService" android:foregroundServiceType="mediaPlayback" android:exported="false">
-                      <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
-                  </service>
-              </application>
-          </manifest>
-          EOF
-
+          # 6. INYECCIÓN DE MANIFIESTO Y CÓDIGO FUENTE
+          echo "<manifest xmlns:android='http://schemas.android.com/apk/res/android'><application android:label='Lyra Ind' android:theme='@style/Theme.AppCompat.NoActionBar'><activity android:name='.MainActivity' android:exported='true'><intent-filter><action android:name='android.intent.action.MAIN' /><category android:name='android.intent.category.LAUNCHER' /></intent-filter></activity><service android:name='.LyraPlaybackService' android:foregroundServiceType='mediaPlayback' android:exported='false'><intent-filter><action android:name='androidx.media3.session.MediaSessionService' /></intent-filter></service></application></manifest>" > app/src/main/AndroidManifest.xml
           echo "package com.lyra.audiokernel; import android.os.Bundle; import androidx.appcompat.app.AppCompatActivity; public class MainActivity extends AppCompatActivity { protected void onCreate(Bundle b) { super.onCreate(b); } }" > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           echo "package com.lyra.audiokernel; import androidx.media3.session.*; public class LyraPlaybackService extends MediaSessionService { public MediaSession onGetSession(MediaSession.ControllerInfo c) { return null; } }" > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
           echo "<resources><style name='Theme.AppCompat.NoActionBar' parent='Theme.AppCompat.DayNight.NoActionBar' /></resources>" > app/src/main/res/values/styles.xml
           echo "<LinearLayout xmlns:android='http://schemas.android.com/apk/res/android' android:layout_width='match_parent' android:layout_height='match_parent' android:background='#000'></LinearLayout>" > app/src/main/res/layout/activity_main.xml
 
-          # 5. Ignición usando el motor binario inyectado
+          # 7. IGNICIÓN CON MOTOR OMEGA
           gradle :app:assembleDebug --stacktrace
 
-      - name: Deliver Lyra Industrial v1.8
+      - name: Deliver Lyra Industrial v1.8-OMEGA
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-v1.8-Industrial
+          name: Lyra-v1.8-Omega
           path: "app/build/outputs/apk/debug/*.apk"
-
