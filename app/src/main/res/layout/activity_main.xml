@@ -1,61 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout 
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#050505">
+    android:background="#111111"
+    android:padding="16dp">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+    <com.lyra.audiokernel.VUMeterView
+        android:id="@+id/vu_left"
+        android:layout_width="120dp"
+        android:layout_height="250dp"
+        android:layout_alignParentStart="true"
+        android:layout_centerVertical="true" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="120dp"
-            android:orientation="horizontal"
-            android:background="#111111"
-            android:padding="4dp">
-            <com.lyra.audiokernel.VUMeterView 
-                android:id="@+id/vu_left" 
-                android:layout_width="0dp" 
-                android:layout_height="match_parent" 
-                android:layout_weight="1" />
-            <com.lyra.audiokernel.VUMeterView 
-                android:id="@+id/vu_right" 
-                android:layout_width="0dp" 
-                android:layout_height="match_parent" 
-                android:layout_weight="1" />
-        </LinearLayout>
+    <com.lyra.audiokernel.VUMeterView
+        android:id="@+id/vu_right"
+        android:layout_width="120dp"
+        android:layout_height="250dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true" />
 
-        <LinearLayout
-            android:id="@+id/nixie_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:orientation="horizontal"
-            android:background="#050505"
-            android:padding="12dp">
-            <TextView android:id="@+id/nixie_m1" style="@style/NixieDigit" android:text="0" />
-            <TextView android:id="@+id/nixie_m2" style="@style/NixieDigit" android:text="0" />
-            <TextView style="@style/NixieDigit" android:text=":" android:alpha="0.4" />
-            <TextView android:id="@+id/nixie_s1" style="@style/NixieDigit" android:text="0" />
-            <TextView android:id="@+id/nixie_s2" style="@style/NixieDigit" android:text="0" />
-        </LinearLayout>
-
-        <SeekBar 
-            android:id="@+id/seek_bar" 
-            android:layout_width="match_parent" 
-            android:layout_height="wrap_content" 
-            android:progressTint="#00BFFF" 
-            android:thumbTint="#00BFFF"/>
-            
-        <ListView 
-            android:id="@+id/playlist_view" 
-            android:layout_width="match_parent" 
-            android:layout_height="0dp" 
-            android:layout_weight="1" />
-
-    </LinearLayout>
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
-
+</RelativeLayout>
