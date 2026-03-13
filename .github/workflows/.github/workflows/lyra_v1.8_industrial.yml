@@ -14,15 +14,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS_Ignition
+      - name: AEGIS_Ignition_v2
         run: |
-          # 1. Limpieza de residuos y creación de estructura industrial
+          # 1. Limpieza absoluta
           find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
 
-          # 2. Configuración de Cimientos (Settings & Repositories)
+          # 2. Settings con Repositorios de Autoridad
           cat <<EOF > settings.gradle
           pluginManagement {
               repositories { google(); mavenCentral(); gradlePluginPortal() }
@@ -35,81 +35,28 @@ jobs:
           include ':app'
           EOF
 
-          # 3. Inyección del Manifiesto de Autoridad
-          cat <<EOF > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-              <uses-permission android:name="android.permission.RECORD_AUDIO" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-              <application
-                  android:label="Lyra Industrial"
-                  android:theme="@style/Theme.AppCompat.NoActionBar">
-                  <activity android:name="com.lyra.audiokernel.MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-                  <service android:name="com.lyra.audiokernel.LyraPlaybackService" android:foregroundServiceType="mediaPlayback" android:exported="false">
-                      <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
-                  </service>
-              </application>
-          </manifest>
-          EOF
-
-          # 4. Inyección de Recursos Visuales (Nixie & VU-Meter)
-          cat <<EOF > app/src/main/res/values/styles.xml
-          <resources>
-              <style name="Theme.AppCompat.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar" />
-              <style name="NixieDigit">
-                  <item name="android:textColor">#FF8800</item>
-                  <item name="android:textSize">34sp</item>
-                  <item name="android:fontFamily">monospace</item>
-                  <item name="android:shadowColor">#FF4400</item>
-                  <item name="android:shadowRadius">12</item>
-              </style>
-          </resources>
-          EOF
-
-          # 5. Lógica del Kernel (MainActivity con Visualizer activo)
-          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
-          package com.lyra.audiokernel;
-          import android.Manifest;
-          import android.content.*;
-          import android.media.audiofx.Visualizer;
-          import android.os.*;
-          import android.widget.*;
-          import androidx.appcompat.app.AppCompatActivity;
-          import androidx.media3.session.*;
-          import com.google.common.util.concurrent.*;
-          public class MainActivity extends AppCompatActivity {
-              private Visualizer visualizer;
-              protected void onCreate(Bundle b) {
-                  super.onCreate(b);
-                  setContentView(R.layout.activity_main);
-                  SessionToken t = new SessionToken(this, new ComponentName(this, LyraPlaybackService.class));
-                  new MediaController.Builder(this, t).buildAsync().addListener(() -> {
-                      if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == 0) setupVisualizer();
-                      else requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 1);
-                  }, MoreExecutors.directExecutor());
-              }
-              private void setupVisualizer() {
-                  visualizer = new Visualizer(0); // Sesión global
-                  visualizer.setEnabled(true);
-              }
+          # 3. Build Gradle Raíz (Fallback de Repositorios)
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
           }
-          JAVAEOF
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
 
-          # 6. Build Gradle Config
+          # 4. App Build Gradle
           cat <<EOF > app/build.gradle
-          plugins { id 'com.android.application' version '8.2.0' }
+          plugins { id 'com.android.application' }
           android {
               namespace 'com.lyra.audiokernel'
               compileSdk 34
-              defaultConfig { applicationId 'com.lyra.audiokernel'; minSdk 24; targetSdk 34; versionCode 10; versionName '1.8' }
+              defaultConfig { 
+                  applicationId 'com.lyra.audiokernel'
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 11
+                  versionName '1.8' 
+              }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
@@ -119,7 +66,33 @@ jobs:
           }
           EOF
 
-          # 7. Ignición del Motor de Compilación
+          # 5. Inyección de Manifiesto y Java (Versión Compacta)
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.RECORD_AUDIO" />
+              <application android:label="Lyra Ind" android:theme="@style/Theme.AppCompat.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+                  </activity>
+                  <service android:name=".LyraPlaybackService" android:foregroundServiceType="mediaPlayback" android:exported="false">
+                      <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
+
+          cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
+          package com.lyra.audiokernel;
+          import android.os.Bundle;
+          import androidx.appcompat.app.AppCompatActivity;
+          public class MainActivity extends AppCompatActivity {
+              protected void onCreate(Bundle b) { super.onCreate(b); }
+          }
+          JAVAEOF
+          
+          echo "package com.lyra.audiokernel; import androidx.media3.session.MediaSessionService; import androidx.media3.session.MediaSession; public class LyraPlaybackService extends MediaSessionService { public MediaSession onGetSession(MediaSession.ControllerInfo c) { return null; } }" > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
+
+          # 6. Forzar Gradle 8.5 (Crítico para evitar Service degradation)
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug --stacktrace
