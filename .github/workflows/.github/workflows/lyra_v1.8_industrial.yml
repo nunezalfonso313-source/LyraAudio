@@ -14,67 +14,79 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force Gradle Authority
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: 8.5
-
-      - name: AEGIS_Final_Ignition_with_Log
+      - name: AEGIS_Omega_Ignition
         run: |
-          # 1. Limpieza y Re-estructuración
+          # 1. Limpieza y Bypass de Motor
           find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
+          
+          # Descarga manual del motor Gradle 8.5 para anular el bache 9.4.0
+          wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
+          unzip -q gradle-8.5-bin.zip
+          export PATH=$PWD/gradle-8.5/bin:$PATH
+          
+          # 2. Configuración de Cimientos
           mkdir -p app/src/main/java/com/lyra/audiokernel app/src/main/res/layout app/src/main/res/values
-
-          # 2. Cimientos de Repositorio
+          
           cat <<EOF > settings.gradle
-          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
-              repositories { google(); mavenCentral() }
-          }
           rootProject.name = "LyraAudio"
           include ':app'
           EOF
 
-          # 3. App Build (Blindado)
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+
+          # 3. App Build (Estructura de Compatibilidad)
           cat <<EOF > app/build.gradle
-          plugins { id 'com.android.application' }
+          apply plugin: 'com.android.application'
           android {
               namespace 'com.lyra.audiokernel'
               compileSdk 34
-              defaultConfig { applicationId 'com.lyra.audiokernel'; minSdk 24; targetSdk 34; versionCode 15; versionName '1.8' }
+              defaultConfig { 
+                  applicationId 'com.lyra.audiokernel'
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 16
+                  versionName '1.8' 
+              }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'androidx.media3:media3-exoplayer:1.2.0'
               implementation 'androidx.media3:media3-session:1.2.0'
+              implementation 'com.google.guava:guava:32.1.3-android'
           }
           EOF
 
-          # 4. Inyección de Código Estándar
-          echo "<manifest xmlns:android='http://schemas.android.com/apk/res/android'><application android:label='Lyra Ind' android:theme='@style/Theme.AppCompat.NoActionBar'><activity android:name='.MainActivity' android:exported='true'><intent-filter><action android:name='android.intent.action.MAIN' /><category android:name='android.intent.category.LAUNCHER' /></intent-filter></activity><service android:name='.LyraPlaybackService' android:foregroundServiceType='mediaPlayback' android:exported='false'><intent-filter><action android:name='androidx.media3.session.MediaSessionService' /></intent-filter></service></application></manifest>" > app/src/main/AndroidManifest.xml
+          # 4. Inyección de Manifiesto y Código de Autoridad
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:label="Lyra Ind" android:theme="@style/Theme.AppCompat.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+                  </activity>
+                  <service android:name=".LyraPlaybackService" android:foregroundServiceType="mediaPlayback" android:exported="false">
+                      <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
+
           echo "package com.lyra.audiokernel; import android.os.Bundle; import androidx.appcompat.app.AppCompatActivity; public class MainActivity extends AppCompatActivity { protected void onCreate(Bundle b) { super.onCreate(b); } }" > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           echo "package com.lyra.audiokernel; import androidx.media3.session.*; public class LyraPlaybackService extends MediaSessionService { public MediaSession onGetSession(MediaSession.ControllerInfo c) { return null; } }" > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
           echo "<resources><style name='Theme.AppCompat.NoActionBar' parent='Theme.AppCompat.DayNight.NoActionBar' /></resources>" > app/src/main/res/values/styles.xml
           echo "<LinearLayout xmlns:android='http://schemas.android.com/apk/res/android' android:layout_width='match_parent' android:layout_height='match_parent' android:background='#000'></LinearLayout>" > app/src/main/res/layout/activity_main.xml
 
-          # 5. Ignición
-          ./gradlew :app:assembleDebug --stacktrace
-
-      - name: Log_Technical_Note
-        if: always()
-        run: |
-          echo "==== AEGIS_RMS_v5.2 TECHNICAL STATUS REPORT ===="
-          echo "Timestamp: 2026-03-13 11:56 CST"
-          echo "Unit Identity: LYRA_OS_V2"
-          echo "Session Status: Tactical Standby"
-          echo "Critical Path: Gradle 9.3.1 conflict vs Plugin 8.2.0"
-          echo "Mitigation: Force Gradle 8.5 via setup-gradle action"
-          echo "Integrity: Validated"
-          echo "==== END OF REPORT ===="
+          # 5. Ignición usando el motor binario inyectado
+          gradle :app:assembleDebug --stacktrace
 
       - name: Deliver Lyra Industrial v1.8
         uses: actions/upload-artifact@v4
         with:
           name: Lyra-v1.8-Industrial
           path: "app/build/outputs/apk/debug/*.apk"
+
