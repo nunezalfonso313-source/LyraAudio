@@ -1,0 +1,11 @@
+name: lyra-run
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "workflow detectado"
