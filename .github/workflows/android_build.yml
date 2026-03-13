@@ -1,6 +1,6 @@
 name: Lyra_v1.8_Industrial
+
 on:
-  push:
   workflow_dispatch:
 
 jobs:
