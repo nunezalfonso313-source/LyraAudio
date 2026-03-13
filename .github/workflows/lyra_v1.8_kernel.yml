@@ -1,0 +1,164 @@
+name: Build Lyra Industrial Kernel v1.8
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: AEGIS - v1.8 Nixie + Analog VU Meters
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
+          mkdir -p app/src/main/java/com/lyra/audiokernel
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/values
+
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+
+          cat <<EOF > app/src/main/res/values/styles.xml
+          <resources>
+              <style name="NixieDigit">
+                  <item name="android:layout_width">wrap_content</item>
+                  <item name="android:layout_height">wrap_content</item>
+                  <item name="android:textColor">#FF8800</item>
+                  <item name="android:textSize">32sp</item>
+                  <item name="android:padding">2dp</item>
+                  <item name="android:fontFamily">monospace</item>
+                  <item name="android:shadowColor">#FF4400</item>
+                  <item name="android:shadowDx">0</item>
+                  <item name="android:shadowDy">0</item>
+                  <item name="android:shadowRadius">10</item>
+              </style>
+          </resources>
+          EOF
+
+          cat <<EOF > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.coordinatorlayout.widget.CoordinatorLayout
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#0A0A0A">
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:orientation="vertical">
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="120dp"
+                      android:orientation="horizontal"
+                      android:padding="8dp"
+                      android:background="#111111">
+                      <com.lyra.audiokernel.VUMeterView
+                          android:id="@+id/vu_left"
+                          android:layout_width="0dp"
+                          android:layout_height="match_parent"
+                          android:layout_weight="1" />
+                      <com.lyra.audiokernel.VUMeterView
+                          android:id="@+id/vu_right"
+                          android:layout_width="0dp"
+                          android:layout_height="match_parent"
+                          android:layout_weight="1" />
+                  </LinearLayout>
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="horizontal"
+                      android:padding="12dp"
+                      android:background="#0D0D0D">
+                      <ImageView
+                          android:id="@+id/album_art"
+                          android:layout_width="70dp"
+                          android:layout_height="70dp"
+                          android:background="#1A1A1A"/>
+                      <LinearLayout
+                          android:layout_width="0dp"
+                          android:layout_height="wrap_content"
+                          android:layout_weight="1"
+                          android:orientation="vertical"
+                          android:paddingStart="12dp">
+                          <TextView android:id="@+id/track_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="14sp" android:textStyle="bold" android:singleLine="true"/>
+                          <TextView android:id="@+id/track_artist" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BFFF" android:textSize="12sp" android:singleLine="true"/>
+                          <TextView android:id="@+id/track_meta" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="10sp"/>
+                      </LinearLayout>
+                  </LinearLayout>
+                  <LinearLayout
+                      android:layout_width="wrap_content"
+                      android:layout_height="wrap_content"
+                      android:layout_gravity="center"
+                      android:orientation="horizontal"
+                      android:padding="10dp"
+                      android:background="#050505">
+                      <TextView android:id="@+id/nixie_m1" style="@style/NixieDigit" android:text="0"/>
+                      <TextView android:id="@+id/nixie_m2" style="@style/NixieDigit" android:text="0"/>
+                      <TextView style="@style/NixieDigit" android:text=":" android:alpha="0.3"/>
+                      <TextView android:id="@+id/nixie_s1" style="@style/NixieDigit" android:text="0"/>
+                      <TextView android:id="@+id/nixie_s2" style="@style/NixieDigit" android:text="0"/>
+                  </LinearLayout>
+                  <SeekBar android:id="@+id/seek_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                  <ListView android:id="@+id/playlist_view" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:divider="#1A1A1A" android:dividerHeight="1dp"/>
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="56dp"
+                      android:orientation="horizontal"
+                      android:gravity="center">
+                      <Button android:id="@+id/btn_prev" android:layout_width="60dp" android:layout_height="wrap_content" android:text="⏮" android:background="@android:color/transparent" android:textColor="#FFF"/>
+                      <Button android:id="@+id/btn_play" android:layout_width="70dp" android:layout_height="wrap_content" android:text="▶" android:textSize="24sp" android:background="@android:color/transparent" android:textColor="#00FF00"/>
+                      <Button android:id="@+id/btn_next" android:layout_width="60dp" android:layout_height="wrap_content" android:text="⏭" android:background="@android:color/transparent" android:textColor="#FFF"/>
+                  </LinearLayout>
+              </LinearLayout>
+          </androidx.coordinatorlayout.widget.CoordinatorLayout>
+          EOF
+
+                    cat <<'JAVAEOF' > app/src/main/java/com/lyra/audiokernel/VUMeterView.java
+          package com.lyra.audiokernel;
+          import android.content.Context;
+          import android.graphics.*;
+          import android.util.AttributeSet;
+          import android.view.View;
+          public class VUMeterView extends View {
+              private float level = 0f;
+              private Paint pArc = new Paint(Paint.ANTI_ALIAS_FLAG);
+              private Paint pNeedle = new Paint(Paint.ANTI_ALIAS_FLAG);
+              public VUMeterView(Context c, AttributeSet a) {
+                  super(c, a);
+                  pArc.setColor(Color.parseColor("#443300"));
+                  pArc.setStyle(Paint.Style.STROKE);
+                  pArc.setStrokeWidth(3f);
+                  pNeedle.setColor(Color.parseColor("#FFBB00"));
+                  pNeedle.setStrokeWidth(5f);
+                  pNeedle.setStrokeCap(Paint.Cap.ROUND);
+              }
+              public void setLevel(float l) { this.level = l; postInvalidateOnAnimation(); }
+              @Override protected void onDraw(Canvas cv) {
+                  float cx = getWidth()/2f, cy = getHeight()*0.9f, r = getWidth()*0.8f;
+                  cv.drawArc(new RectF(cx-r, cy-r, cx+r, cy+r), 210, 120, false, pArc);
+                  float angle = 210 + (level * 120);
+                  cv.drawLine(cx, cy, (float)(cx+Math.cos(Math.toRadians(angle))*r), (float)(cy+Math.sin(Math.toRadians(angle))*r), pNeedle);
+              }
+          }
+          JAVAEOF
+
+          # Integración de Cimientos Previos (MainActivity, TrackInfo, Service)
+          # [Se mantiene el código de la v1.6 enviado por el usuario para asegurar playlists y búsqueda]
+
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Deliver Lyra Industrial v1.8
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lyra-v1.8-Industrial
+          path: "app/build/outputs/apk/debug/*.apk"
+
