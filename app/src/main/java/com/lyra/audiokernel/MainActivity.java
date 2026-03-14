@@ -556,25 +556,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadAlbumArt(int index) {
-        if (index >= allTracks.size()) return;
-        TrackInfo t = allTracks.get(index);
-        new Thread(() -> {
-            Bitmap art = null;
-            try {
-                MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-                mmr.setDataSource(getApplicationContext(), t.uri);
-                byte[] bytes = mmr.getEmbeddedPicture();
-                mmr.release();
-                if (bytes != null) art = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            } catch (Exception ignored) {}
-            t.albumArt = art;
-            runOnUiThread(() -> {
-                if (currentIndex == index) {
-                    if (art != null) albumArt.setImageBitmap(art);
-                    else albumArt.setImageResource(android.R.drawable.ic_media_play);
-                }
-            });
-        }).start();
+    if (index >= allTracks.size()) return;
+    TrackInfo t = allTracks.get(index);
+    new Thread(() -> {
+        Bitmap art = null;
+        try {
+            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+            mmr.setDataSource(getApplicationContext(), t.uri);
+            byte[] bytes = mmr.getEmbeddedPicture();
+            mmr.release();
+            if (bytes != null) art = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Exception ignored) {}
+        
+        final Bitmap finalArt = art;  // ← ESTA LÍNEA NUEVA
+        t.albumArt = finalArt;
+        
+        runOnUiThread(() -> {
+            if (currentIndex == index) {
+                if (finalArt != null) albumArt.setImageBitmap(finalArt);
+                else albumArt.setImageResource(android.R.drawable.ic_media_play);
+            }
+        });
+    }).start();
     }
 
     private void updateUI(int index) {
