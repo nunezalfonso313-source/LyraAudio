@@ -144,176 +144,191 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        
+        // === PROTECCIÓN CONTRA CRASHES ===
+        try {
+            setContentView(R.layout.activity_main);
 
-        vuLeft       = findViewById(R.id.vu_left);
-        vuRight      = findViewById(R.id.vu_right);
-        spectrumView = findViewById(R.id.spectrum_view);
-        nixieDisplay = findViewById(R.id.nixie_display);
+            vuLeft       = findViewById(R.id.vu_left);
+            vuRight      = findViewById(R.id.vu_right);
+            spectrumView = findViewById(R.id.spectrum_view);
+            nixieDisplay = findViewById(R.id.nixie_display);
 
-        vuLeft.setChannelLabel("L");
-        vuRight.setChannelLabel("R");
+            // Protección adicional por si alguna vista es null
+            if (vuLeft != null) vuLeft.setChannelLabel("L");
+            if (vuRight != null) vuRight.setChannelLabel("R");
 
-        lyraVisualizer = new LyraVisualizer(vuLeft, vuRight, spectrumView);
+            lyraVisualizer = new LyraVisualizer(vuLeft, vuRight, spectrumView);
 
-        albumArt     = findViewById(R.id.album_art);
-        trackTitle   = findViewById(R.id.track_title);
-        trackArtist  = findViewById(R.id.track_artist);
-        trackAlbum   = findViewById(R.id.track_album);
-        trackMeta    = findViewById(R.id.track_meta);
-        trackNumber  = findViewById(R.id.track_number);
-        timeCurrent  = findViewById(R.id.time_current);
-        timeTotal    = findViewById(R.id.time_total);
-        libraryLabel = findViewById(R.id.library_label);
-        seekBar      = findViewById(R.id.seek_bar);
-        playlistView = findViewById(R.id.playlist_view);
-        btnPlay      = findViewById(R.id.btn_play);
-        btnShuffle   = findViewById(R.id.btn_shuffle);
-        btnRepeat    = findViewById(R.id.btn_repeat);
-        btnEq        = findViewById(R.id.btn_eq);
-        btnSort      = findViewById(R.id.btn_sort);
-        btnSearch    = findViewById(R.id.btn_search);
-        eqPanel      = findViewById(R.id.eq_panel);
-        searchBar    = findViewById(R.id.search_bar);
-        searchInput  = findViewById(R.id.search_input);
-        plDrawer     = findViewById(R.id.pl_drawer);
-        plScrim      = findViewById(R.id.pl_scrim);
-        plNameBar    = findViewById(R.id.pl_name_bar);
-        plNameInput  = findViewById(R.id.pl_name_input);
-        plList       = findViewById(R.id.pl_list);
+            albumArt     = findViewById(R.id.album_art);
+            trackTitle   = findViewById(R.id.track_title);
+            trackArtist  = findViewById(R.id.track_artist);
+            trackAlbum   = findViewById(R.id.track_album);
+            trackMeta    = findViewById(R.id.track_meta);
+            trackNumber  = findViewById(R.id.track_number);
+            timeCurrent  = findViewById(R.id.time_current);
+            timeTotal    = findViewById(R.id.time_total);
+            libraryLabel = findViewById(R.id.library_label);
+            seekBar      = findViewById(R.id.seek_bar);
+            playlistView = findViewById(R.id.playlist_view);
+            btnPlay      = findViewById(R.id.btn_play);
+            btnShuffle   = findViewById(R.id.btn_shuffle);
+            btnRepeat    = findViewById(R.id.btn_repeat);
+            btnEq        = findViewById(R.id.btn_eq);
+            btnSort      = findViewById(R.id.btn_sort);
+            btnSearch    = findViewById(R.id.btn_search);
+            eqPanel      = findViewById(R.id.eq_panel);
+            searchBar    = findViewById(R.id.search_bar);
+            searchInput  = findViewById(R.id.search_input);
+            plDrawer     = findViewById(R.id.pl_drawer);
+            plScrim      = findViewById(R.id.pl_scrim);
+            plNameBar    = findViewById(R.id.pl_name_bar);
+            plNameInput  = findViewById(R.id.pl_name_input);
+            plList       = findViewById(R.id.pl_list);
 
-        Button btnPrev      = findViewById(R.id.btn_prev);
-        Button btnNext      = findViewById(R.id.btn_next);
-        Button btnEqReset   = findViewById(R.id.btn_eq_reset);
-        Button btnPlNew     = findViewById(R.id.btn_pl_new);
-        Button btnPlClose   = findViewById(R.id.btn_pl_close);
-        Button btnPlSave    = findViewById(R.id.btn_pl_save);
-        Button btnSearchClear = findViewById(R.id.btn_search_clear);
+            Button btnPrev      = findViewById(R.id.btn_prev);
+            Button btnNext      = findViewById(R.id.btn_next);
+            Button btnEqReset   = findViewById(R.id.btn_eq_reset);
+            Button btnPlNew     = findViewById(R.id.btn_pl_new);
+            Button btnPlClose   = findViewById(R.id.btn_pl_close);
+            Button btnPlSave    = findViewById(R.id.btn_pl_save);
+            Button btnSearchClear = findViewById(R.id.btn_search_clear);
 
-        int[] bandIds  = {R.id.eq_band0, R.id.eq_band1, R.id.eq_band2, R.id.eq_band3, R.id.eq_band4};
-        int[] valIds   = {R.id.eq_val0,  R.id.eq_val1,  R.id.eq_val2,  R.id.eq_val3,  R.id.eq_val4};
-        int[] labelIds = {R.id.eq_label0,R.id.eq_label1,R.id.eq_label2,R.id.eq_label3,R.id.eq_label4};
-        for (int i = 0; i < 5; i++) {
-            eqBands[i]  = findViewById(bandIds[i]);
-            eqVals[i]   = findViewById(valIds[i]);
-            eqLabels[i] = findViewById(labelIds[i]);
-            final short band = (short) i;
-            eqBands[i].setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            int[] bandIds  = {R.id.eq_band0, R.id.eq_band1, R.id.eq_band2, R.id.eq_band3, R.id.eq_band4};
+            int[] valIds   = {R.id.eq_val0,  R.id.eq_val1,  R.id.eq_val2,  R.id.eq_val3,  R.id.eq_val4};
+            int[] labelIds = {R.id.eq_label0,R.id.eq_label1,R.id.eq_label2,R.id.eq_label3,R.id.eq_label4};
+            for (int i = 0; i < 5; i++) {
+                eqBands[i]  = findViewById(bandIds[i]);
+                eqVals[i]   = findViewById(valIds[i]);
+                eqLabels[i] = findViewById(labelIds[i]);
+                final short band = (short) i;
+                eqBands[i].setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
+                        if (!fromUser || !serviceBound) return;
+                        short[] range = lyraService.getBandLevelRange();
+                        int span = range[1] - range[0];
+                        short level = (short)(range[0] + (span * p / 20));
+                        lyraService.setBandLevel(band, level);
+                        int db = level / 100;
+                        eqVals[band].setText((db >= 0 ? "+" : "") + db + "dB");
+                    }
+                    @Override public void onStartTrackingTouch(SeekBar sb) {}
+                    @Override public void onStopTrackingTouch(SeekBar sb) {}
+                });
+            }
+
+            loadPlaylists();
+            plAdapter = new PlaylistAdapter(this, playlists);
+            plList.setAdapter(plAdapter);
+
+            adapter = new TrackAdapter(this, displayedTracks);
+            playlistView.setAdapter(adapter);
+
+            seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
                 @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
-                    if (!fromUser || !serviceBound) return;
-                    short[] range = lyraService.getBandLevelRange();
-                    int span = range[1] - range[0];
-                    short level = (short)(range[0] + (span * p / 20));
-                    lyraService.setBandLevel(band, level);
-                    int db = level / 100;
-                    eqVals[band].setText((db >= 0 ? "+" : "") + db + "dB");
+                    if (fromUser && mediaController != null) mediaController.seekTo(p);
                 }
                 @Override public void onStartTrackingTouch(SeekBar sb) {}
                 @Override public void onStopTrackingTouch(SeekBar sb) {}
             });
+
+            playlistView.setOnItemClickListener((parent, view, position, id) -> {
+                if (addingToPlaylist) return;
+                int realIndex = allTracks.indexOf(displayedTracks.get(position));
+                if (realIndex < 0) realIndex = position;
+                currentIndex = realIndex;
+                playAt(currentIndex);
+            });
+
+            btnPlay.setOnClickListener(v -> {
+                if (mediaController == null) return;
+                if (mediaController.isPlaying()) {
+                    mediaController.pause();
+                    lyraVisualizer.stop();
+                } else {
+                    mediaController.play();
+                    if (visualizerReady) lyraVisualizer.start();
+                }
+            });
+            btnPrev.setOnClickListener(v -> advanceTrack(-1));
+            btnNext.setOnClickListener(v -> advanceTrack(1));
+            btnShuffle.setOnClickListener(v -> toggleShuffle());
+            btnRepeat.setOnClickListener(v -> cycleRepeat());
+            btnEq.setOnClickListener(v -> {
+                eqVisible = !eqVisible;
+                eqPanel.setVisibility(eqVisible ? View.VISIBLE : View.GONE);
+                btnEq.setTextColor(eqVisible ? 0xFF00FF00 : 0xFFFFFFFF);
+            });
+            btnEqReset.setOnClickListener(v -> {
+                if (serviceBound) {
+                    lyraService.resetEq();
+                    for (int i = 0; i < 5; i++) { eqBands[i].setProgress(10); eqVals[i].setText("0dB"); }
+                }
+            });
+            btnSort.setOnClickListener(v -> cycleSort());
+            btnSearch.setOnClickListener(v -> toggleSearch());
+            btnSearchClear.setOnClickListener(v -> { searchInput.setText(""); toggleSearch(); });
+            searchInput.addTextChangedListener(new TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+                @Override public void onTextChanged(CharSequence s, int st, int b, int c) { filterTracks(s.toString()); }
+                @Override public void afterTextChanged(Editable s) {}
+            });
+            btnPlNew.setOnClickListener(v -> {
+                plNameBar.setVisibility(View.VISIBLE);
+                plNameInput.setText("");
+                plNameInput.requestFocus();
+            });
+            btnPlSave.setOnClickListener(v -> {
+                String name = plNameInput.getText().toString().trim();
+                if (name.isEmpty()) { Toast.makeText(this, "Escribe un nombre", Toast.LENGTH_SHORT).show(); return; }
+                pendingPlaylistName = name;
+                plNameBar.setVisibility(View.GONE);
+                hideSoftKeyboard();
+                enterAddMode(name);
+            });
+            btnPlClose.setOnClickListener(v -> closePlDrawer());
+            plScrim.setOnClickListener(v -> closePlDrawer());
+            plList.setOnItemClickListener((parent, view, position, id) -> {
+                if (!addingToPlaylist) loadPlaylistIntoQueue(playlists.get(position));
+            });
+            findViewById(R.id.btn_playlists).setOnClickListener(v -> togglePlDrawer());
+
+            Intent eqIntent = new Intent(this, LyraPlaybackService.class);
+            eqIntent.setAction("lyra.eq.bind");
+            bindService(eqIntent, eqConnection, Context.BIND_AUTO_CREATE);
+
+            SessionToken token = new SessionToken(this, new ComponentName(this, LyraPlaybackService.class));
+            controllerFuture = new MediaController.Builder(this, token).buildAsync();
+            controllerFuture.addListener(() -> {
+                try {
+                    mediaController = controllerFuture.get();
+                    mediaController.addListener(new Player.Listener() {
+                        @Override public void onIsPlayingChanged(boolean playing) {
+                            btnPlay.setText(playing ? "⏸" : "▶");
+                            if (!playing) lyraVisualizer.stop();
+                            else if (visualizerReady) lyraVisualizer.start();
+                        }
+                        @Override public void onMediaItemTransition(MediaItem item, int reason) {
+                            int idx = mediaController.getCurrentMediaItemIndex();
+                            if (idx >= 0 && idx < allTracks.size()) updateUI(idx);
+                        }
+                    });
+                    checkPermissionAndLoad();
+                } catch (Exception e) { trackTitle.setText("Error al iniciar servicio"); }
+            }, MoreExecutors.directExecutor());
+
+            handler.post(updateProgress);
+            
+        } catch (Exception e) {
+            // === MUESTRA EL ERROR EN PANTALLA ===
+            e.printStackTrace();
+            TextView errorView = new TextView(this);
+            errorView.setText("ERROR: " + e.toString() + "\n\n" + e.getMessage());
+            errorView.setTextColor(0xFFFF0000);
+            errorView.setTextSize(16);
+            errorView.setPadding(32, 32, 32, 32);
+            setContentView(errorView);
         }
-
-        loadPlaylists();
-        plAdapter = new PlaylistAdapter(this, playlists);
-        plList.setAdapter(plAdapter);
-
-        adapter = new TrackAdapter(this, displayedTracks);
-        playlistView.setAdapter(adapter);
-
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
-                if (fromUser && mediaController != null) mediaController.seekTo(p);
-            }
-            @Override public void onStartTrackingTouch(SeekBar sb) {}
-            @Override public void onStopTrackingTouch(SeekBar sb) {}
-        });
-
-        playlistView.setOnItemClickListener((parent, view, position, id) -> {
-            if (addingToPlaylist) return;
-            int realIndex = allTracks.indexOf(displayedTracks.get(position));
-            if (realIndex < 0) realIndex = position;
-            currentIndex = realIndex;
-            playAt(currentIndex);
-        });
-
-        btnPlay.setOnClickListener(v -> {
-            if (mediaController == null) return;
-            if (mediaController.isPlaying()) {
-                mediaController.pause();
-                lyraVisualizer.stop();
-            } else {
-                mediaController.play();
-                if (visualizerReady) lyraVisualizer.start();
-            }
-        });
-        btnPrev.setOnClickListener(v -> advanceTrack(-1));
-        btnNext.setOnClickListener(v -> advanceTrack(1));
-        btnShuffle.setOnClickListener(v -> toggleShuffle());
-        btnRepeat.setOnClickListener(v -> cycleRepeat());
-        btnEq.setOnClickListener(v -> {
-            eqVisible = !eqVisible;
-            eqPanel.setVisibility(eqVisible ? View.VISIBLE : View.GONE);
-            btnEq.setTextColor(eqVisible ? 0xFF00FF00 : 0xFFFFFFFF);
-        });
-        btnEqReset.setOnClickListener(v -> {
-            if (serviceBound) {
-                lyraService.resetEq();
-                for (int i = 0; i < 5; i++) { eqBands[i].setProgress(10); eqVals[i].setText("0dB"); }
-            }
-        });
-        btnSort.setOnClickListener(v -> cycleSort());
-        btnSearch.setOnClickListener(v -> toggleSearch());
-        btnSearchClear.setOnClickListener(v -> { searchInput.setText(""); toggleSearch(); });
-        searchInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int c) { filterTracks(s.toString()); }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-        btnPlNew.setOnClickListener(v -> {
-            plNameBar.setVisibility(View.VISIBLE);
-            plNameInput.setText("");
-            plNameInput.requestFocus();
-        });
-        btnPlSave.setOnClickListener(v -> {
-            String name = plNameInput.getText().toString().trim();
-            if (name.isEmpty()) { Toast.makeText(this, "Escribe un nombre", Toast.LENGTH_SHORT).show(); return; }
-            pendingPlaylistName = name;
-            plNameBar.setVisibility(View.GONE);
-            hideSoftKeyboard();
-            enterAddMode(name);
-        });
-        btnPlClose.setOnClickListener(v -> closePlDrawer());
-        plScrim.setOnClickListener(v -> closePlDrawer());
-        plList.setOnItemClickListener((parent, view, position, id) -> {
-            if (!addingToPlaylist) loadPlaylistIntoQueue(playlists.get(position));
-        });
-        findViewById(R.id.btn_playlists).setOnClickListener(v -> togglePlDrawer());
-
-        Intent eqIntent = new Intent(this, LyraPlaybackService.class);
-        eqIntent.setAction("lyra.eq.bind");
-        bindService(eqIntent, eqConnection, Context.BIND_AUTO_CREATE);
-
-        SessionToken token = new SessionToken(this, new ComponentName(this, LyraPlaybackService.class));
-        controllerFuture = new MediaController.Builder(this, token).buildAsync();
-        controllerFuture.addListener(() -> {
-            try {
-                mediaController = controllerFuture.get();
-                mediaController.addListener(new Player.Listener() {
-                    @Override public void onIsPlayingChanged(boolean playing) {
-                        btnPlay.setText(playing ? "⏸" : "▶");
-                        if (!playing) lyraVisualizer.stop();
-                        else if (visualizerReady) lyraVisualizer.start();
-                    }
-                    @Override public void onMediaItemTransition(MediaItem item, int reason) {
-                        int idx = mediaController.getCurrentMediaItemIndex();
-                        if (idx >= 0 && idx < allTracks.size()) updateUI(idx);
-                    }
-                });
-                checkPermissionAndLoad();
-            } catch (Exception e) { trackTitle.setText("Error al iniciar servicio"); }
-        }, MoreExecutors.directExecutor());
-
-        handler.post(updateProgress);
     }
 
     private void initVisualizer() {
@@ -556,28 +571,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadAlbumArt(int index) {
-    if (index >= allTracks.size()) return;
-    TrackInfo t = allTracks.get(index);
-    new Thread(() -> {
-        Bitmap art = null;
-        try {
-            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-            mmr.setDataSource(getApplicationContext(), t.uri);
-            byte[] bytes = mmr.getEmbeddedPicture();
-            mmr.release();
-            if (bytes != null) art = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-        } catch (Exception ignored) {}
-        
-        final Bitmap finalArt = art;  // ← ESTA LÍNEA NUEVA
-        t.albumArt = finalArt;
-        
-        runOnUiThread(() -> {
-            if (currentIndex == index) {
-                if (finalArt != null) albumArt.setImageBitmap(finalArt);
-                else albumArt.setImageResource(android.R.drawable.ic_media_play);
-            }
-        });
-    }).start();
+        if (index >= allTracks.size()) return;
+        TrackInfo t = allTracks.get(index);
+        new Thread(() -> {
+            Bitmap art = null;
+            try {
+                MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                mmr.setDataSource(getApplicationContext(), t.uri);
+                byte[] bytes = mmr.getEmbeddedPicture();
+                mmr.release();
+                if (bytes != null) art = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            } catch (Exception ignored) {}
+            
+            final Bitmap finalArt = art;
+            t.albumArt = finalArt;
+            
+            runOnUiThread(() -> {
+                if (currentIndex == index) {
+                    if (finalArt != null) albumArt.setImageBitmap(finalArt);
+                    else albumArt.setImageResource(android.R.drawable.ic_media_play);
+                }
+            });
+        }).start();
     }
 
     private void updateUI(int index) {
@@ -630,4 +645,4 @@ public class MainActivity extends AppCompatActivity {
         if (serviceBound) unbindService(eqConnection);
         MediaController.releaseFuture(controllerFuture);
     }
-}
+    }
