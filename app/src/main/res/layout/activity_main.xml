@@ -10,7 +10,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Cabecera con información de la pista -->
+        <!-- Cabecera -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -96,7 +96,7 @@
                 android:layout_marginStart="4dp"/>
         </LinearLayout>
 
-        <!-- Display Nixie -->
+        <!-- Nixie -->
         <com.lyra.audiokernel.NixieDisplayView
             android:id="@+id/nixie_display"
             android:layout_width="match_parent"
@@ -153,7 +153,7 @@
                 android:textSize="11sp"/>
         </LinearLayout>
 
-        <!-- Botones de control -->
+        <!-- Botones de control (YA CON LAYOUT_HEIGHT) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="56dp"
@@ -161,17 +161,18 @@
             android:gravity="center_vertical">
 
             <Button
-            android:id="@+id/btn_shuffle"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"   
-            android:layout_weight="1"
-            android:text="_"
-            android:background="@android:color/transparent"
-            android:textColor="#555555"/>
+                android:id="@+id/btn_shuffle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⇀"
+                android:background="@android:color/transparent"
+                android:textColor="#555555"/>
 
             <Button
                 android:id="@+id/btn_prev"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="⏮"
                 android:background="@android:color/transparent"
@@ -180,6 +181,7 @@
             <Button
                 android:id="@+id/btn_play"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1.2"
                 android:text="▶"
                 android:textColor="#00FF00"
@@ -189,6 +191,7 @@
             <Button
                 android:id="@+id/btn_next"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="⏭"
                 android:background="@android:color/transparent"
@@ -197,13 +200,14 @@
             <Button
                 android:id="@+id/btn_repeat"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="↺"
                 android:background="@android:color/transparent"
                 android:textColor="#555555"/>
         </LinearLayout>
 
-        <!-- Spectrum View -->
+        <!-- Spectrum -->
         <com.lyra.audiokernel.SpectrumView
             android:id="@+id/spectrum_view"
             android:layout_width="match_parent"
@@ -212,7 +216,7 @@
             android:layout_marginEnd="4dp"
             android:layout_marginBottom="4dp"/>
 
-        <!-- Panel EQ -->
+        <!-- EQ Panel -->
         <LinearLayout
             android:id="@+id/eq_panel"
             android:layout_width="match_parent"
@@ -227,33 +231,16 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
-                <!-- Bandas EQ (0-4) -->
+                <!-- Bandas EQ -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center_horizontal">
-                    <TextView
-                        android:id="@+id/eq_label0"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="60Hz"
-                        android:textColor="#888888"
-                        android:textSize="10sp"/>
-                    <SeekBar
-                        android:id="@+id/eq_band0"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="20"
-                        android:progress="10"/>
-                    <TextView
-                        android:id="@+id/eq_val0"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0dB"
-                        android:textColor="#00FF00"
-                        android:textSize="10sp"/>
+                    <TextView android:id="@+id/eq_label0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="60Hz" android:textColor="#888888" android:textSize="10sp"/>
+                    <SeekBar android:id="@+id/eq_band0" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                    <TextView android:id="@+id/eq_val0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -262,26 +249,9 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center_horizontal">
-                    <TextView
-                        android:id="@+id/eq_label1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="230Hz"
-                        android:textColor="#888888"
-                        android:textSize="10sp"/>
-                    <SeekBar
-                        android:id="@+id/eq_band1"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="20"
-                        android:progress="10"/>
-                    <TextView
-                        android:id="@+id/eq_val1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0dB"
-                        android:textColor="#00FF00"
-                        android:textSize="10sp"/>
+                    <TextView android:id="@+id/eq_label1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="230Hz" android:textColor="#888888" android:textSize="10sp"/>
+                    <SeekBar android:id="@+id/eq_band1" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                    <TextView android:id="@+id/eq_val1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -290,26 +260,9 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center_horizontal">
-                    <TextView
-                        android:id="@+id/eq_label2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="910Hz"
-                        android:textColor="#888888"
-                        android:textSize="10sp"/>
-                    <SeekBar
-                        android:id="@+id/eq_band2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="20"
-                        android:progress="10"/>
-                    <TextView
-                        android:id="@+id/eq_val2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0dB"
-                        android:textColor="#00FF00"
-                        android:textSize="10sp"/>
+                    <TextView android:id="@+id/eq_label2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="910Hz" android:textColor="#888888" android:textSize="10sp"/>
+                    <SeekBar android:id="@+id/eq_band2" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                    <TextView android:id="@+id/eq_val2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -318,26 +271,9 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center_horizontal">
-                    <TextView
-                        android:id="@+id/eq_label3"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="3.6kHz"
-                        android:textColor="#888888"
-                        android:textSize="10sp"/>
-                    <SeekBar
-                        android:id="@+id/eq_band3"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="20"
-                        android:progress="10"/>
-                    <TextView
-                        android:id="@+id/eq_val3"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0dB"
-                        android:textColor="#00FF00"
-                        android:textSize="10sp"/>
+                    <TextView android:id="@+id/eq_label3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3.6kHz" android:textColor="#888888" android:textSize="10sp"/>
+                    <SeekBar android:id="@+id/eq_band3" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                    <TextView android:id="@+id/eq_val3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
                 </LinearLayout>
 
                 <LinearLayout
@@ -346,26 +282,9 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="center_horizontal">
-                    <TextView
-                        android:id="@+id/eq_label4"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="14kHz"
-                        android:textColor="#888888"
-                        android:textSize="10sp"/>
-                    <SeekBar
-                        android:id="@+id/eq_band4"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="20"
-                        android:progress="10"/>
-                    <TextView
-                        android:id="@+id/eq_val4"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="0dB"
-                        android:textColor="#00FF00"
-                        android:textSize="10sp"/>
+                    <TextView android:id="@+id/eq_label4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="14kHz" android:textColor="#888888" android:textSize="10sp"/>
+                    <SeekBar android:id="@+id/eq_band4" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                    <TextView android:id="@+id/eq_val4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
                 </LinearLayout>
             </LinearLayout>
 
@@ -379,7 +298,7 @@
                 android:textSize="11sp"/>
         </LinearLayout>
 
-        <!-- Barra de búsqueda -->
+        <!-- Search -->
         <LinearLayout
             android:id="@+id/search_bar"
             android:layout_width="match_parent"
@@ -406,7 +325,7 @@
                 android:textColor="#AAAAAA"/>
         </LinearLayout>
 
-        <!-- Botones de función -->
+        <!-- Function Buttons (YA CON LAYOUT_HEIGHT) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -415,6 +334,7 @@
             <Button
                 android:id="@+id/btn_eq"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="EQ"
                 android:backgroundTint="#1A1A1A"
@@ -424,6 +344,7 @@
             <Button
                 android:id="@+id/btn_sort"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="AZ ARTISTA"
                 android:backgroundTint="#1A1A1A"
@@ -433,6 +354,7 @@
             <Button
                 android:id="@+id/btn_search"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="BUSCAR"
                 android:backgroundTint="#1A1A1A"
@@ -440,17 +362,17 @@
                 android:textSize="12sp"/>
 
             <Button
-    android:id="@+id/btn_playlists"
-    android:layout_width="0dp"
-    android:layout_height="wrap_content"   
-    android:layout_weight="1"
-    android:text="PL"
-    android:backgroundTint="#1A1A1A"
-    android:textColor="#CCCCCC"
-    android:textSize="12sp"/>
+                android:id="@+id/btn_playlists"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="PL"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#CCCCCC"
+                android:textSize="12sp"/>
         </LinearLayout>
 
-        <!-- Lista de reproducción -->
+        <!-- Playlist -->
         <TextView
             android:id="@+id/library_label"
             android:layout_width="match_parent"
@@ -471,7 +393,7 @@
 
     </LinearLayout>
 
-    <!-- Drawer de playlists -->
+    <!-- Drawer -->
     <LinearLayout
         android:id="@+id/pl_scrim"
         android:layout_width="match_parent"
@@ -523,6 +445,7 @@
             <Button
                 android:id="@+id/btn_pl_new"
                 android:layout_width="0dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="+ NUEVA PLAYLIST"
                 android:backgroundTint="#00FF00"
