@@ -1,0 +1,1239 @@
+name: Lyra Audio Kernel Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle wrapper
+        run: |
+          mkdir -p gradle/wrapper
+          cat <<'EOF' > gradle/wrapper/gradle-wrapper.properties
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+          curl -fsSL https://raw.githubusercontent.com/gradle/gradle/v8.5.0/gradlew \
+            -o gradlew 2>/dev/null || \
+          cat <<'GRADLEW' > gradlew
+          #!/bin/sh
+          exec gradle "$@"
+          GRADLEW
+          chmod +x gradlew
+
+      - name: Write build scripts
+        run: |
+          cat <<'EOF' > settings.gradle
+          rootProject.name = 'LyraAudio'
+          include ':app'
+          EOF
+
+          cat <<'EOF' > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+
+          cat <<'EOF' > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace "com.lyra.audiokernel"
+              compileSdk 34
+              defaultConfig {
+                  applicationId "com.lyra.audiokernel"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.7"
+              }
+              buildTypes { release { minifyEnabled false } }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'androidx.coordinatorlayout:coordinatorlayout:1.2.0'
+              implementation 'androidx.media3:media3-exoplayer:1.3.1'
+              implementation 'androidx.media3:media3-session:1.3.1'
+              implementation 'androidx.media3:media3-ui:1.3.1'
+              implementation 'com.google.guava:guava:32.1.3-android'
+          }
+          EOF
+
+      - name: Write AndroidManifest
+        run: |
+          mkdir -p app/src/main
+          cat <<'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+              <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+              <application android:label="Lyra Audio" android:theme="@style/AppTheme" android:allowBackup="true">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <service android:name=".LyraPlaybackService"
+                      android:foregroundServiceType="mediaPlayback"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="androidx.media3.session.MediaSessionService"/>
+                      </intent-filter>
+                  </service>
+              </application>
+          </manifest>
+          EOF
+
+      - name: Write resources
+        run: |
+          mkdir -p app/src/main/res/values
+          cat <<'EOF' > app/src/main/res/values/styles.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+                  <item name="android:windowBackground">#0A0A0A</item>
+                  <item name="android:statusBarColor">#0A0A0A</item>
+                  <item name="android:navigationBarColor">#0A0A0A</item>
+              </style>
+          </resources>
+          EOF
+          cat <<'EOF' > app/src/main/res/values/colors.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <color name="amber">#E8900A</color>
+              <color name="nixie_orange">#FF6B0A</color>
+              <color name="cyan_bar">#00BCD4</color>
+              <color name="green_led">#00E676</color>
+              <color name="bg_dark">#0A0A0A</color>
+          </resources>
+          EOF
+
+      - name: Write item_track.xml
+        run: |
+          mkdir -p app/src/main/res/layout
+          cat <<'EOF' > app/src/main/res/layout/item_track.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="wrap_content"
+              android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical">
+              <TextView android:id="@+id/item_number" android:layout_width="32dp" android:layout_height="wrap_content" android:textColor="#444444" android:textSize="12sp" android:gravity="center"/>
+              <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingStart="4dp">
+                  <TextView android:id="@+id/item_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="13sp" android:singleLine="true" android:ellipsize="end"/>
+                  <TextView android:id="@+id/item_artist" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#888888" android:textSize="11sp" android:singleLine="true"/>
+              </LinearLayout>
+              <TextView android:id="@+id/item_duration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#555555" android:textSize="11sp" android:paddingStart="8dp"/>
+          </LinearLayout>
+          EOF
+
+      - name: Write item_playlist.xml
+        run: |
+          cat <<'EOF' > app/src/main/res/layout/item_playlist.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="wrap_content"
+              android:orientation="horizontal" android:padding="12dp" android:gravity="center_vertical">
+              <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                  <TextView android:id="@+id/pl_item_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="14sp"/>
+                  <TextView android:id="@+id/pl_item_count" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#888888" android:textSize="11sp"/>
+              </LinearLayout>
+              <Button android:id="@+id/pl_item_delete" android:layout_width="36dp" android:layout_height="36dp" android:text="✕" android:background="@android:color/transparent" android:textColor="#FF4444" android:textSize="14sp"/>
+          </LinearLayout>
+          EOF
+
+      - name: Write activity_main.xml
+        run: |
+          cat <<'EOF' > app/src/main/res/layout/activity_main.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <androidx.coordinatorlayout.widget.CoordinatorLayout
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent"
+              android:background="#0A0A0A">
+              <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="12dp" android:background="#111111">
+                      <ImageView android:id="@+id/album_art" android:layout_width="80dp" android:layout_height="80dp" android:scaleType="centerCrop" android:background="#222222" android:src="@android:drawable/ic_media_play"/>
+                      <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingStart="12dp" android:gravity="center_vertical">
+                          <TextView android:id="@+id/track_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Cargando..." android:textColor="#FFFFFF" android:textSize="15sp" android:textStyle="bold" android:ellipsize="marquee" android:singleLine="true"/>
+                          <TextView android:id="@+id/track_artist" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BFFF" android:textSize="13sp" android:singleLine="true"/>
+                          <TextView android:id="@+id/track_album" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#888888" android:textSize="12sp" android:singleLine="true"/>
+                          <TextView android:id="@+id/track_meta" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00FF00" android:textSize="11sp"/>
+                      </LinearLayout>
+                  </LinearLayout>
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="96dp" android:orientation="horizontal" android:background="#0D0D0D" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="6dp" android:paddingBottom="6dp">
+                      <com.lyra.audiokernel.VUMeterView android:id="@+id/vu_left" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginEnd="4dp"/>
+                      <com.lyra.audiokernel.VUMeterView android:id="@+id/vu_right" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="4dp"/>
+                  </LinearLayout>
+                  <com.lyra.audiokernel.NixieDisplayView android:id="@+id/nixie_display" android:layout_width="match_parent" android:layout_height="72dp" android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingTop="4dp" android:paddingBottom="4dp"/>
+                  <SeekBar android:id="@+id/seek_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:layout_marginEnd="8dp" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:paddingStart="12dp" android:paddingEnd="12dp" android:paddingBottom="2dp">
+                      <TextView android:id="@+id/time_current" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="0:00" android:textColor="#00FF00" android:textSize="11sp"/>
+                      <TextView android:id="@+id/track_number" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:textColor="#888888" android:textSize="11sp"/>
+                      <TextView android:id="@+id/time_total" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="end" android:textColor="#00FF00" android:textSize="11sp"/>
+                  </LinearLayout>
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:orientation="horizontal" android:gravity="center_vertical">
+                      <Button android:id="@+id/btn_shuffle" android:layout_width="0dp" android:layout_weight="1" android:text="⇀" android:background="@android:color/transparent" android:textColor="#555555"/>
+                      <Button android:id="@+id/btn_prev" android:layout_width="0dp" android:layout_weight="1" android:text="⏮" android:background="@android:color/transparent" android:textColor="#CCCCCC"/>
+                      <Button android:id="@+id/btn_play" android:layout_width="0dp" android:layout_weight="1.2" android:text="▶" android:textColor="#00FF00" android:background="@android:color/transparent" android:textSize="22sp"/>
+                      <Button android:id="@+id/btn_next" android:layout_width="0dp" android:layout_weight="1" android:text="⏭" android:background="@android:color/transparent" android:textColor="#CCCCCC"/>
+                      <Button android:id="@+id/btn_repeat" android:layout_width="0dp" android:layout_weight="1" android:text="↺" android:background="@android:color/transparent" android:textColor="#555555"/>
+                  </LinearLayout>
+                  <com.lyra.audiokernel.SpectrumView android:id="@+id/spectrum_view" android:layout_width="match_parent" android:layout_height="110dp" android:layout_marginStart="4dp" android:layout_marginEnd="4dp" android:layout_marginBottom="4dp"/>
+                  <LinearLayout android:id="@+id/eq_panel" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="#111111" android:padding="8dp" android:visibility="gone">
+                      <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+                              <TextView android:id="@+id/eq_label0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="60Hz" android:textColor="#888888" android:textSize="10sp"/>
+                              <SeekBar android:id="@+id/eq_band0" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                              <TextView android:id="@+id/eq_val0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
+                          </LinearLayout>
+                          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+                              <TextView android:id="@+id/eq_label1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="230Hz" android:textColor="#888888" android:textSize="10sp"/>
+                              <SeekBar android:id="@+id/eq_band1" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                              <TextView android:id="@+id/eq_val1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
+                          </LinearLayout>
+                          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+                              <TextView android:id="@+id/eq_label2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="910Hz" android:textColor="#888888" android:textSize="10sp"/>
+                              <SeekBar android:id="@+id/eq_band2" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                              <TextView android:id="@+id/eq_val2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
+                          </LinearLayout>
+                          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+                              <TextView android:id="@+id/eq_label3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3.6kHz" android:textColor="#888888" android:textSize="10sp"/>
+                              <SeekBar android:id="@+id/eq_band3" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                              <TextView android:id="@+id/eq_val3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
+                          </LinearLayout>
+                          <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center_horizontal">
+                              <TextView android:id="@+id/eq_label4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="14kHz" android:textColor="#888888" android:textSize="10sp"/>
+                              <SeekBar android:id="@+id/eq_band4" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="20" android:progress="10"/>
+                              <TextView android:id="@+id/eq_val4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0dB" android:textColor="#00FF00" android:textSize="10sp"/>
+                          </LinearLayout>
+                      </LinearLayout>
+                      <Button android:id="@+id/btn_eq_reset" android:layout_width="match_parent" android:layout_height="32dp" android:text="RESET EQ" android:backgroundTint="#1A1A1A" android:textColor="#888888" android:textSize="11sp"/>
+                  </LinearLayout>
+                  <LinearLayout android:id="@+id/search_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone" android:padding="8dp">
+                      <EditText android:id="@+id/search_input" android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:hint="Buscar..." android:background="#1A1A1A" android:textColor="#FFFFFF" android:paddingStart="8dp"/>
+                      <Button android:id="@+id/btn_search_clear" android:layout_width="36dp" android:layout_height="36dp" android:text="✕" android:background="@android:color/transparent" android:textColor="#AAAAAA"/>
+                  </LinearLayout>
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp">
+                      <Button android:id="@+id/btn_eq" android:layout_width="0dp" android:layout_weight="1" android:text="EQ" android:backgroundTint="#1A1A1A" android:textColor="#CCCCCC" android:textSize="12sp"/>
+                      <Button android:id="@+id/btn_sort" android:layout_width="0dp" android:layout_weight="1" android:text="AZ ARTISTA" android:backgroundTint="#1A1A1A" android:textColor="#CCCCCC" android:textSize="12sp"/>
+                      <Button android:id="@+id/btn_search" android:layout_width="0dp" android:layout_weight="1" android:text="BUSCAR" android:backgroundTint="#1A1A1A" android:textColor="#CCCCCC" android:textSize="12sp"/>
+                      <Button android:id="@+id/btn_playlists" android:layout_width="0dp" android:layout_weight="1" android:text="PL" android:backgroundTint="#1A1A1A" android:textColor="#CCCCCC" android:textSize="12sp"/>
+                  </LinearLayout>
+                  <TextView android:id="@+id/library_label" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="LISTA DE REPRODUCCIÓN" android:textColor="#444444" android:textSize="10sp" android:paddingStart="12dp" android:paddingBottom="2dp"/>
+                  <ListView android:id="@+id/playlist_view" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:divider="#1A1A1A" android:dividerHeight="1dp"/>
+              </LinearLayout>
+              <LinearLayout android:id="@+id/pl_scrim" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#99000000" android:visibility="gone"/>
+              <LinearLayout android:id="@+id/pl_drawer" android:layout_width="match_parent" android:layout_height="400dp" android:layout_gravity="bottom" android:background="#111111" android:visibility="gone" android:orientation="vertical">
+                  <LinearLayout android:id="@+id/pl_name_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="8dp" android:visibility="gone">
+                      <EditText android:id="@+id/pl_name_input" android:layout_width="0dp" android:layout_height="36dp" android:layout_weight="1" android:hint="Nombre de playlist..." android:background="#1A1A1A" android:textColor="#FFFFFF" android:paddingStart="8dp"/>
+                      <Button android:id="@+id/btn_pl_save" android:layout_width="wrap_content" android:layout_height="36dp" android:text="OK" android:backgroundTint="#00FF00" android:textColor="#000000"/>
+                  </LinearLayout>
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                      <Button android:id="@+id/btn_pl_new" android:layout_width="0dp" android:layout_weight="1" android:text="+ NUEVA PLAYLIST" android:backgroundTint="#00FF00" android:textColor="#000000"/>
+                      <Button android:id="@+id/btn_pl_close" android:layout_width="48dp" android:layout_height="wrap_content" android:text="✕" android:background="@android:color/transparent" android:textColor="#AAAAAA"/>
+                  </LinearLayout>
+                  <ListView android:id="@+id/pl_list" android:layout_width="match_parent" android:layout_height="match_parent"/>
+              </LinearLayout>
+          </androidx.coordinatorlayout.widget.CoordinatorLayout>
+          EOF
+
+      - name: Write TrackInfo.java
+        run: |
+          mkdir -p app/src/main/java/com/lyra/audiokernel
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/TrackInfo.java
+          package com.lyra.audiokernel;
+          import android.graphics.Bitmap;
+          import androidx.media3.common.MediaItem;
+
+          public class TrackInfo {
+              public MediaItem mediaItem;
+              public String title, artist, album, meta, duration;
+              public Bitmap albumArt;
+              public android.net.Uri uri;
+
+              public TrackInfo(MediaItem mediaItem, String title, String artist, String album,
+                               String meta, String duration, Bitmap albumArt, android.net.Uri uri) {
+                  this.mediaItem = mediaItem; this.title = title; this.artist = artist;
+                  this.album = album; this.meta = meta; this.duration = duration;
+                  this.albumArt = albumArt; this.uri = uri;
+              }
+          }
+          EOF
+
+      - name: Write LyraPlaylist.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/LyraPlaylist.java
+          package com.lyra.audiokernel;
+          import java.util.ArrayList;
+          import java.util.List;
+
+          public class LyraPlaylist {
+              public String name;
+              public List<String> uris = new ArrayList<>();
+              public LyraPlaylist(String name) { this.name = name; }
+          }
+          EOF
+
+      - name: Write TrackAdapter.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/TrackAdapter.java
+          package com.lyra.audiokernel;
+          import android.content.Context;
+          import android.graphics.Color;
+          import android.view.LayoutInflater;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.widget.ArrayAdapter;
+          import android.widget.TextView;
+          import java.util.List;
+
+          public class TrackAdapter extends ArrayAdapter<TrackInfo> {
+              private int currentIndex = -1;
+              private boolean addMode = false;
+              public interface OnAddClickListener { void onAdd(int position); }
+              private OnAddClickListener addListener;
+
+              public TrackAdapter(Context context, List<TrackInfo> tracks) { super(context, 0, tracks); }
+
+              public void setCurrentIndex(int index) { this.currentIndex = index; notifyDataSetChanged(); }
+              public void setAddMode(boolean addMode, OnAddClickListener listener) {
+                  this.addMode = addMode; this.addListener = listener; notifyDataSetChanged();
+              }
+
+              @Override
+              public View getView(int position, View convertView, ViewGroup parent) {
+                  if (convertView == null)
+                      convertView = LayoutInflater.from(getContext()).inflate(R.layout.item_track, parent, false);
+                  TrackInfo track = getItem(position);
+                  TextView number   = convertView.findViewById(R.id.item_number);
+                  TextView title    = convertView.findViewById(R.id.item_title);
+                  TextView artist   = convertView.findViewById(R.id.item_artist);
+                  TextView duration = convertView.findViewById(R.id.item_duration);
+                  if (addMode) {
+                      convertView.setBackgroundColor(Color.TRANSPARENT);
+                      number.setText("+"); number.setTextColor(Color.parseColor("#00BFFF"));
+                      title.setTextColor(Color.WHITE);
+                      convertView.setOnClickListener(v -> { if (addListener != null) addListener.onAdd(position); });
+                  } else if (position == currentIndex) {
+                      convertView.setBackgroundColor(Color.parseColor("#1A2A1A"));
+                      number.setText("▶"); number.setTextColor(Color.parseColor("#00FF00"));
+                      title.setTextColor(Color.parseColor("#00FF00"));
+                  } else {
+                      convertView.setBackgroundColor(Color.TRANSPARENT);
+                      number.setText(String.valueOf(position + 1));
+                      number.setTextColor(Color.parseColor("#444444"));
+                      title.setTextColor(Color.WHITE);
+                  }
+                  if (track != null) {
+                      title.setText(track.title); artist.setText(track.artist); duration.setText(track.duration);
+                  }
+                  return convertView;
+              }
+          }
+          EOF
+
+      - name: Write PlaylistAdapter.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/PlaylistAdapter.java
+          package com.lyra.audiokernel;
+          import android.content.Context;
+          import android.view.LayoutInflater;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.widget.ArrayAdapter;
+          import android.widget.Button;
+          import android.widget.TextView;
+          import java.util.List;
+
+          public class PlaylistAdapter extends ArrayAdapter<LyraPlaylist> {
+              private final List<LyraPlaylist> playlists;
+              private final Context context;
+
+              public PlaylistAdapter(Context context, List<LyraPlaylist> playlists) {
+                  super(context, 0, playlists); this.context = context; this.playlists = playlists;
+              }
+
+              @Override
+              public View getView(int position, View convertView, ViewGroup parent) {
+                  if (convertView == null)
+                      convertView = LayoutInflater.from(context).inflate(R.layout.item_playlist, parent, false);
+                  LyraPlaylist pl = getItem(position);
+                  TextView name  = convertView.findViewById(R.id.pl_item_name);
+                  TextView count = convertView.findViewById(R.id.pl_item_count);
+                  Button delete  = convertView.findViewById(R.id.pl_item_delete);
+                  if (pl != null) { name.setText(pl.name); count.setText(pl.uris.size() + " pistas"); }
+                  delete.setOnClickListener(v -> { playlists.remove(position); notifyDataSetChanged(); });
+                  return convertView;
+              }
+          }
+          EOF
+
+      - name: Write LyraVisualizer.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/LyraVisualizer.java
+          package com.lyra.audiokernel;
+          import android.media.audiofx.Visualizer;
+
+          public class LyraVisualizer {
+              private static final int CAPTURE_SIZE = 512;
+              private Visualizer visualizer;
+              private VUMeterView vuLeft, vuRight;
+              private SpectrumView spectrumView;
+              private boolean active = false;
+
+              public interface VisualizerReadyCallback {
+                  void onReady();
+                  void onError(String msg);
+              }
+
+              public LyraVisualizer(VUMeterView left, VUMeterView right, SpectrumView spectrum) {
+                  this.vuLeft = left; this.vuRight = right; this.spectrumView = spectrum;
+              }
+
+              public void init(int audioSessionId, VisualizerReadyCallback callback) {
+                  release();
+                  try {
+                      visualizer = new Visualizer(audioSessionId);
+                      int[] range = Visualizer.getCaptureSizeRange();
+                      int size = Math.max(range[0], Math.min(CAPTURE_SIZE, range[1]));
+                      visualizer.setCaptureSize(size);
+                      final int captureSize = visualizer.getCaptureSize();
+                      visualizer.setDataCaptureListener(new Visualizer.OnDataCaptureListener() {
+                          @Override
+                          public void onWaveFormDataCapture(Visualizer v, byte[] waveform, int samplingRate) {
+                              if (!active || waveform == null) return;
+                              int half = waveform.length / 2;
+                              float rmsL = computeRMS(waveform, 0, half);
+                              float rmsR = computeRMS(waveform, half, waveform.length);
+                              float normL = Math.min(1f, rmsL / 64f);
+                              float normR = Math.min(1f, rmsR / 64f);
+                              if (vuLeft  != null) vuLeft.post(() -> vuLeft.setLevel(normL));
+                              if (vuRight != null) vuRight.post(() -> vuRight.setLevel(normR));
+                          }
+                          @Override
+                          public void onFftDataCapture(Visualizer v, byte[] fft, int sr) {
+                              if (active && fft != null && spectrumView != null)
+                                  spectrumView.updateFromFFT(fft, captureSize);
+                          }
+                      }, Math.min(Visualizer.getMaxCaptureRate(), 30000), true, true);
+                      visualizer.setEnabled(true);
+                      active = true;
+                      if (callback != null) callback.onReady();
+                  } catch (Exception e) { if (callback != null) callback.onError(e.getMessage()); }
+              }
+
+              private float computeRMS(byte[] data, int from, int to) {
+                  long sum = 0;
+                  for (int i = from; i < to; i++) { int v = data[i]; sum += v * v; }
+                  return (float) Math.sqrt((double) sum / (to - from));
+              }
+
+              public void start() { if (visualizer != null) { visualizer.setEnabled(true); active = true; } }
+              public void stop()  { if (visualizer != null) { visualizer.setEnabled(false); active = false; } }
+              public void release() { active = false; if (visualizer != null) { visualizer.release(); visualizer = null; } }
+          }
+          EOF
+
+      - name: Write LyraPlaybackService.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
+          package com.lyra.audiokernel;
+          import android.content.Intent;
+          import android.media.audiofx.Equalizer;
+          import android.os.Binder;
+          import android.os.IBinder;
+          import androidx.media3.exoplayer.ExoPlayer;
+          import androidx.media3.session.MediaSession;
+          import androidx.media3.session.MediaSessionService;
+
+          public class LyraPlaybackService extends MediaSessionService {
+              private MediaSession mediaSession;
+              private ExoPlayer player;
+              private Equalizer equalizer;
+              private final LyraBinder binder = new LyraBinder();
+
+              public class LyraBinder extends Binder {
+                  public LyraPlaybackService getService() { return LyraPlaybackService.this; }
+              }
+
+              @Override public IBinder onBind(Intent intent) {
+                  if (intent != null && "lyra.eq.bind".equals(intent.getAction())) return binder;
+                  return super.onBind(intent);
+              }
+
+              @Override
+              public void onCreate() {
+                  super.onCreate();
+                  player = new ExoPlayer.Builder(this).build();
+                  mediaSession = new MediaSession.Builder(this, player).build();
+                  try { equalizer = new Equalizer(0, player.getAudioSessionId()); equalizer.setEnabled(true); } catch (Exception ignored) {}
+              }
+
+              public int getAudioSessionId()          { return player != null ? player.getAudioSessionId() : 0; }
+              public short getNumBands()               { return equalizer != null ? equalizer.getNumberOfBands() : 5; }
+              public int getBandFreq(short band)       { return equalizer != null ? equalizer.getCenterFreq(band) : 0; }
+              public short[] getBandLevelRange()       { return equalizer != null ? equalizer.getBandLevelRange() : new short[]{-1500, 1500}; }
+              public short getBandLevel(short band)    { return equalizer != null ? equalizer.getBandLevel(band) : 0; }
+              public void setBandLevel(short band, short level) { if (equalizer != null) equalizer.setBandLevel(band, level); }
+              public void resetEq()                    { if (equalizer != null) { short n = getNumBands(); for (short i = 0; i < n; i++) setBandLevel(i, (short)0); } }
+
+              @Override public MediaSession onGetSession(MediaSession.ControllerInfo c) { return mediaSession; }
+              @Override public void onDestroy() {
+                  if (equalizer != null) equalizer.release();
+                  mediaSession.getPlayer().release();
+                  mediaSession.release();
+                  super.onDestroy();
+              }
+          }
+          EOF
+
+      - name: Write MainActivity.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
+          package com.lyra.audiokernel;
+
+          import android.Manifest;
+          import android.content.ComponentName;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.ServiceConnection;
+          import android.content.SharedPreferences;
+          import android.content.pm.PackageManager;
+          import android.database.Cursor;
+          import android.graphics.Bitmap;
+          import android.graphics.BitmapFactory;
+          import android.media.MediaMetadataRetriever;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.IBinder;
+          import android.os.Looper;
+          import android.provider.MediaStore;
+          import android.text.Editable;
+          import android.text.TextWatcher;
+          import android.view.LayoutInflater;
+          import android.view.View;
+          import android.view.ViewGroup;
+          import android.view.inputmethod.InputMethodManager;
+          import android.widget.ArrayAdapter;
+          import android.widget.Button;
+          import android.widget.EditText;
+          import android.widget.ImageView;
+          import android.widget.LinearLayout;
+          import android.widget.ListView;
+          import android.widget.SeekBar;
+          import android.widget.TextView;
+          import android.widget.Toast;
+          import androidx.activity.result.ActivityResultLauncher;
+          import androidx.activity.result.contract.ActivityResultContracts;
+          import androidx.appcompat.app.AppCompatActivity;
+          import androidx.core.content.ContextCompat;
+          import androidx.media3.common.MediaItem;
+          import androidx.media3.common.Player;
+          import androidx.media3.session.MediaController;
+          import androidx.media3.session.SessionToken;
+          import com.google.common.util.concurrent.ListenableFuture;
+          import com.google.common.util.concurrent.MoreExecutors;
+          import org.json.JSONArray;
+          import org.json.JSONObject;
+          import java.util.ArrayList;
+          import java.util.Collections;
+          import java.util.Comparator;
+          import java.util.List;
+          import java.util.Locale;
+          import java.util.stream.Collectors;
+
+          public class MainActivity extends AppCompatActivity {
+
+              private MediaController mediaController;
+              private ListenableFuture<MediaController> controllerFuture;
+              private LyraPlaybackService lyraService;
+              private boolean serviceBound = false;
+              private LyraVisualizer lyraVisualizer;
+              private VUMeterView vuLeft, vuRight;
+              private SpectrumView spectrumView;
+              private NixieDisplayView nixieDisplay;
+              private boolean visualizerReady = false;
+              private ImageView albumArt;
+              private TextView trackTitle, trackArtist, trackAlbum, trackMeta,
+                               trackNumber, timeCurrent, timeTotal, libraryLabel;
+              private SeekBar seekBar;
+              private ListView playlistView;
+              private Button btnPlay, btnShuffle, btnRepeat, btnEq, btnSort, btnSearch;
+              private LinearLayout eqPanel, searchBar, plDrawer, plScrim, plNameBar;
+              private EditText searchInput, plNameInput;
+              private ListView plList;
+              private SeekBar[] eqBands   = new SeekBar[5];
+              private TextView[] eqVals   = new TextView[5];
+              private TextView[] eqLabels = new TextView[5];
+              private boolean eqVisible = false, eqInitialized = false;
+              private boolean searchVisible = false, plDrawerVisible = false;
+              private boolean addingToPlaylist = false;
+              private String pendingPlaylistName = null;
+              private List<TrackInfo> allTracks = new ArrayList<>();
+              private List<TrackInfo> displayedTracks = new ArrayList<>();
+              private int currentIndex = 0;
+              private boolean isShuffled = false;
+              private int repeatMode = 0, sortMode = 0;
+              private TrackAdapter adapter;
+              private List<LyraPlaylist> playlists = new ArrayList<>();
+              private PlaylistAdapter plAdapter;
+              private final Handler handler = new Handler(Looper.getMainLooper());
+              private static final String PREFS = "lyra_prefs";
+              private static final String KEY_INDEX = "last_index";
+              private static final String KEY_PLAYLISTS = "playlists_json";
+
+              private final ServiceConnection eqConnection = new ServiceConnection() {
+                  @Override public void onServiceConnected(ComponentName n, IBinder b) {
+                      lyraService = ((LyraPlaybackService.LyraBinder) b).getService();
+                      serviceBound = true; initEqUI(); initVisualizer();
+                  }
+                  @Override public void onServiceDisconnected(ComponentName n) { serviceBound = false; lyraService = null; }
+              };
+
+              private final Runnable updateProgress = new Runnable() {
+                  @Override public void run() {
+                      if (mediaController != null) {
+                          long cur = mediaController.getCurrentPosition();
+                          long tot = mediaController.getDuration();
+                          boolean playing = mediaController.isPlaying();
+                          if (tot > 0) {
+                              seekBar.setMax((int) tot); seekBar.setProgress((int) cur);
+                              timeCurrent.setText(formatTime(cur)); timeTotal.setText(formatTime(tot));
+                          }
+                          nixieDisplay.setTime(cur, playing);
+                      }
+                      handler.postDelayed(this, 100);
+                  }
+              };
+
+              private final ActivityResultLauncher<String> permissionLauncher =
+                  registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                      if (granted) loadMediaStore();
+                      else trackTitle.setText("Permiso necesario para leer música");
+                  });
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  setContentView(R.layout.activity_main);
+                  vuLeft = findViewById(R.id.vu_left); vuRight = findViewById(R.id.vu_right);
+                  spectrumView = findViewById(R.id.spectrum_view); nixieDisplay = findViewById(R.id.nixie_display);
+                  vuLeft.setChannelLabel("L"); vuRight.setChannelLabel("R");
+                  lyraVisualizer = new LyraVisualizer(vuLeft, vuRight, spectrumView);
+                  albumArt = findViewById(R.id.album_art); trackTitle = findViewById(R.id.track_title);
+                  trackArtist = findViewById(R.id.track_artist); trackAlbum = findViewById(R.id.track_album);
+                  trackMeta = findViewById(R.id.track_meta); trackNumber = findViewById(R.id.track_number);
+                  timeCurrent = findViewById(R.id.time_current); timeTotal = findViewById(R.id.time_total);
+                  libraryLabel = findViewById(R.id.library_label); seekBar = findViewById(R.id.seek_bar);
+                  playlistView = findViewById(R.id.playlist_view); btnPlay = findViewById(R.id.btn_play);
+                  btnShuffle = findViewById(R.id.btn_shuffle); btnRepeat = findViewById(R.id.btn_repeat);
+                  btnEq = findViewById(R.id.btn_eq); btnSort = findViewById(R.id.btn_sort);
+                  btnSearch = findViewById(R.id.btn_search); eqPanel = findViewById(R.id.eq_panel);
+                  searchBar = findViewById(R.id.search_bar); searchInput = findViewById(R.id.search_input);
+                  plDrawer = findViewById(R.id.pl_drawer); plScrim = findViewById(R.id.pl_scrim);
+                  plNameBar = findViewById(R.id.pl_name_bar); plNameInput = findViewById(R.id.pl_name_input);
+                  plList = findViewById(R.id.pl_list);
+                  Button btnPrev = findViewById(R.id.btn_prev); Button btnNext = findViewById(R.id.btn_next);
+                  Button btnEqReset = findViewById(R.id.btn_eq_reset); Button btnPlNew = findViewById(R.id.btn_pl_new);
+                  Button btnPlClose = findViewById(R.id.btn_pl_close); Button btnPlSave = findViewById(R.id.btn_pl_save);
+                  Button btnSearchClear = findViewById(R.id.btn_search_clear);
+                  int[] bandIds  = {R.id.eq_band0,R.id.eq_band1,R.id.eq_band2,R.id.eq_band3,R.id.eq_band4};
+                  int[] valIds   = {R.id.eq_val0,R.id.eq_val1,R.id.eq_val2,R.id.eq_val3,R.id.eq_val4};
+                  int[] labelIds = {R.id.eq_label0,R.id.eq_label1,R.id.eq_label2,R.id.eq_label3,R.id.eq_label4};
+                  for (int i = 0; i < 5; i++) {
+                      eqBands[i] = findViewById(bandIds[i]); eqVals[i] = findViewById(valIds[i]);
+                      eqLabels[i] = findViewById(labelIds[i]);
+                      final short band = (short) i;
+                      eqBands[i].setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                          @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) {
+                              if (!fromUser || !serviceBound) return;
+                              short[] range = lyraService.getBandLevelRange();
+                              int span = range[1] - range[0];
+                              short level = (short)(range[0] + (span * p / 20));
+                              lyraService.setBandLevel(band, level);
+                              int db = level / 100;
+                              eqVals[band].setText((db >= 0 ? "+" : "") + db + "dB");
+                          }
+                          @Override public void onStartTrackingTouch(SeekBar sb) {}
+                          @Override public void onStopTrackingTouch(SeekBar sb) {}
+                      });
+                  }
+                  loadPlaylists();
+                  plAdapter = new PlaylistAdapter(this, playlists); plList.setAdapter(plAdapter);
+                  adapter = new TrackAdapter(this, displayedTracks); playlistView.setAdapter(adapter);
+                  seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                      @Override public void onProgressChanged(SeekBar sb, int p, boolean fromUser) { if (fromUser && mediaController != null) mediaController.seekTo(p); }
+                      @Override public void onStartTrackingTouch(SeekBar sb) {}
+                      @Override public void onStopTrackingTouch(SeekBar sb) {}
+                  });
+                  playlistView.setOnItemClickListener((parent, view, position, id) -> {
+                      if (addingToPlaylist) return;
+                      int realIndex = allTracks.indexOf(displayedTracks.get(position));
+                      if (realIndex < 0) realIndex = position;
+                      currentIndex = realIndex; playAt(currentIndex);
+                  });
+                  btnPlay.setOnClickListener(v -> {
+                      if (mediaController == null) return;
+                      if (mediaController.isPlaying()) { mediaController.pause(); lyraVisualizer.stop(); }
+                      else { mediaController.play(); if (visualizerReady) lyraVisualizer.start(); }
+                  });
+                  btnPrev.setOnClickListener(v -> advanceTrack(-1));
+                  btnNext.setOnClickListener(v -> advanceTrack(1));
+                  btnShuffle.setOnClickListener(v -> toggleShuffle());
+                  btnRepeat.setOnClickListener(v -> cycleRepeat());
+                  btnEq.setOnClickListener(v -> { eqVisible = !eqVisible; eqPanel.setVisibility(eqVisible ? View.VISIBLE : View.GONE); btnEq.setTextColor(eqVisible ? 0xFF00FF00 : 0xFFFFFFFF); });
+                  btnEqReset.setOnClickListener(v -> { if (serviceBound) { lyraService.resetEq(); for (int i = 0; i < 5; i++) { eqBands[i].setProgress(10); eqVals[i].setText("0dB"); } } });
+                  btnSort.setOnClickListener(v -> cycleSort());
+                  btnSearch.setOnClickListener(v -> toggleSearch());
+                  btnSearchClear.setOnClickListener(v -> { searchInput.setText(""); toggleSearch(); });
+                  searchInput.addTextChangedListener(new TextWatcher() {
+                      @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
+                      @Override public void onTextChanged(CharSequence s, int st, int b, int c) { filterTracks(s.toString()); }
+                      @Override public void afterTextChanged(Editable s) {}
+                  });
+                  btnPlNew.setOnClickListener(v -> { plNameBar.setVisibility(View.VISIBLE); plNameInput.setText(""); plNameInput.requestFocus(); });
+                  btnPlSave.setOnClickListener(v -> {
+                      String name = plNameInput.getText().toString().trim();
+                      if (name.isEmpty()) { Toast.makeText(this, "Escribe un nombre", Toast.LENGTH_SHORT).show(); return; }
+                      pendingPlaylistName = name; plNameBar.setVisibility(View.GONE); hideSoftKeyboard(); enterAddMode(name);
+                  });
+                  btnPlClose.setOnClickListener(v -> closePlDrawer());
+                  plScrim.setOnClickListener(v -> closePlDrawer());
+                  plList.setOnItemClickListener((parent, view, position, id) -> { if (!addingToPlaylist) loadPlaylistIntoQueue(playlists.get(position)); });
+                  findViewById(R.id.btn_playlists).setOnClickListener(v -> togglePlDrawer());
+                  Intent eqIntent = new Intent(this, LyraPlaybackService.class);
+                  eqIntent.setAction("lyra.eq.bind");
+                  bindService(eqIntent, eqConnection, Context.BIND_AUTO_CREATE);
+                  SessionToken token = new SessionToken(this, new ComponentName(this, LyraPlaybackService.class));
+                  controllerFuture = new MediaController.Builder(this, token).buildAsync();
+                  controllerFuture.addListener(() -> {
+                      try {
+                          mediaController = controllerFuture.get();
+                          mediaController.addListener(new Player.Listener() {
+                              @Override public void onIsPlayingChanged(boolean playing) {
+                                  btnPlay.setText(playing ? "⏸" : "▶");
+                                  if (!playing) lyraVisualizer.stop();
+                                  else if (visualizerReady) lyraVisualizer.start();
+                              }
+                              @Override public void onMediaItemTransition(MediaItem item, int reason) {
+                                  int idx = mediaController.getCurrentMediaItemIndex();
+                                  if (idx >= 0 && idx < allTracks.size()) updateUI(idx);
+                              }
+                          });
+                          checkPermissionAndLoad();
+                      } catch (Exception e) { trackTitle.setText("Error al iniciar servicio"); }
+                  }, MoreExecutors.directExecutor());
+                  handler.post(updateProgress);
+              }
+
+              private void initVisualizer() {
+                  if (!serviceBound || lyraService == null) return;
+                  int sessionId = lyraService.getAudioSessionId();
+                  if (sessionId == 0) { handler.postDelayed(this::initVisualizer, 500); return; }
+                  lyraVisualizer.init(sessionId, new LyraVisualizer.VisualizerReadyCallback() {
+                      @Override public void onReady() { visualizerReady = true; if (mediaController != null && mediaController.isPlaying()) lyraVisualizer.start(); }
+                      @Override public void onError(String msg) { visualizerReady = false; }
+                  });
+              }
+
+              private void enterAddMode(String plName) {
+                  addingToPlaylist = true; closePlDrawer();
+                  libraryLabel.setText("TOCA + PARA AGREGAR A: " + plName.toUpperCase());
+                  libraryLabel.setTextColor(0xFF00BFFF);
+                  adapter.setAddMode(true, position -> {
+                      TrackInfo t = displayedTracks.get(position);
+                      addTrackToPlaylist(plName, t);
+                      Toast.makeText(this, "Agregada: " + t.title, Toast.LENGTH_SHORT).show();
+                  });
+                  Button btnDone = new Button(this); btnDone.setText("✓ LISTO"); btnDone.setTag("done_btn");
+                  btnDone.setOnClickListener(v -> exitAddMode());
+                  LinearLayout root = (LinearLayout) playlistView.getParent();
+                  root.addView(btnDone, root.indexOfChild(libraryLabel));
+              }
+
+              private void exitAddMode() {
+                  addingToPlaylist = false; pendingPlaylistName = null;
+                  libraryLabel.setText("LISTA DE REPRODUCCIÓN"); libraryLabel.setTextColor(0xFF444444);
+                  adapter.setAddMode(false, null);
+                  LinearLayout root = (LinearLayout) playlistView.getParent();
+                  View doneBtn = root.findViewWithTag("done_btn");
+                  if (doneBtn != null) root.removeView(doneBtn);
+                  savePlaylists(); plAdapter.notifyDataSetChanged();
+              }
+
+              private void addTrackToPlaylist(String plName, TrackInfo t) {
+                  for (LyraPlaylist pl : playlists) { if (pl.name.equals(plName)) { pl.uris.add(t.uri.toString()); return; } }
+                  LyraPlaylist pl = new LyraPlaylist(plName); pl.uris.add(t.uri.toString()); playlists.add(pl);
+              }
+
+              private void loadPlaylistIntoQueue(LyraPlaylist pl) {
+                  List<TrackInfo> plTracks = new ArrayList<>();
+                  for (String uriStr : pl.uris) { Uri uri = Uri.parse(uriStr); for (TrackInfo t : allTracks) { if (t.uri.equals(uri)) { plTracks.add(t); break; } } }
+                  if (plTracks.isEmpty()) { Toast.makeText(this, "Playlist vacía", Toast.LENGTH_SHORT).show(); return; }
+                  displayedTracks.clear(); displayedTracks.addAll(plTracks); adapter.notifyDataSetChanged();
+                  libraryLabel.setText("▶ " + pl.name.toUpperCase() + " — " + plTracks.size() + " pistas");
+                  libraryLabel.setTextColor(0xFF00FF00);
+                  List<MediaItem> items = plTracks.stream().map(t -> t.mediaItem).collect(Collectors.toList());
+                  mediaController.setMediaItems(items, 0, 0); mediaController.prepare();
+                  currentIndex = 0; updateUI(0); closePlDrawer();
+              }
+
+              private void togglePlDrawer() {
+                  plDrawerVisible = !plDrawerVisible;
+                  plDrawer.setVisibility(plDrawerVisible ? View.VISIBLE : View.GONE);
+                  plScrim.setVisibility(plDrawerVisible ? View.VISIBLE : View.GONE);
+                  if (plDrawerVisible) plAdapter.notifyDataSetChanged();
+              }
+
+              private void closePlDrawer() {
+                  plDrawerVisible = false; plDrawer.setVisibility(View.GONE);
+                  plScrim.setVisibility(View.GONE); plNameBar.setVisibility(View.GONE);
+              }
+
+              private void cycleSort() {
+                  sortMode = (sortMode + 1) % 3;
+                  switch (sortMode) {
+                      case 0: Collections.sort(allTracks, Comparator.comparing(t -> t.title.toLowerCase())); btnSort.setText("AZ TÍTULO"); break;
+                      case 1: Collections.sort(allTracks, Comparator.comparing(t -> t.artist.toLowerCase())); btnSort.setText("AZ ARTISTA"); break;
+                      case 2: Collections.sort(allTracks, Comparator.comparing(t -> t.album.toLowerCase())); btnSort.setText("AZ ÁLBUM"); break;
+                  }
+                  filterTracks(searchInput.getText().toString());
+              }
+
+              private void toggleSearch() {
+                  searchVisible = !searchVisible;
+                  searchBar.setVisibility(searchVisible ? View.VISIBLE : View.GONE);
+                  btnSearch.setTextColor(searchVisible ? 0xFF00FF00 : 0xFFFFFFFF);
+                  if (searchVisible) { searchInput.requestFocus(); ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE)).showSoftInput(searchInput, InputMethodManager.SHOW_IMPLICIT); }
+                  else { searchInput.setText(""); filterTracks(""); hideSoftKeyboard(); }
+              }
+
+              private void filterTracks(String query) {
+                  displayedTracks.clear();
+                  if (query.isEmpty()) { displayedTracks.addAll(allTracks); libraryLabel.setText("LISTA DE REPRODUCCIÓN"); libraryLabel.setTextColor(0xFF444444); }
+                  else {
+                      String low = query.toLowerCase();
+                      for (TrackInfo t : allTracks) { if (t.title.toLowerCase().contains(low) || t.artist.toLowerCase().contains(low)) displayedTracks.add(t); }
+                      libraryLabel.setText("RESULTADOS: " + displayedTracks.size()); libraryLabel.setTextColor(0xFF00BFFF);
+                  }
+                  adapter.notifyDataSetChanged();
+              }
+
+              private void hideSoftKeyboard() {
+                  InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                  View focus = getCurrentFocus();
+                  if (focus != null) imm.hideSoftInputFromWindow(focus.getWindowToken(), 0);
+              }
+
+              private void savePlaylists() {
+                  try {
+                      JSONArray arr = new JSONArray();
+                      for (LyraPlaylist pl : playlists) {
+                          JSONObject obj = new JSONObject(); obj.put("name", pl.name);
+                          JSONArray uriArr = new JSONArray();
+                          for (String u : pl.uris) uriArr.put(u);
+                          obj.put("uris", uriArr); arr.put(obj);
+                      }
+                      getSharedPreferences(PREFS, MODE_PRIVATE).edit().putString(KEY_PLAYLISTS, arr.toString()).apply();
+                  } catch (Exception ignored) {}
+              }
+
+              private void loadPlaylists() {
+                  playlists.clear();
+                  try {
+                      String json = getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_PLAYLISTS, "[]");
+                      JSONArray arr = new JSONArray(json);
+                      for (int i = 0; i < arr.length(); i++) {
+                          JSONObject obj = arr.getJSONObject(i);
+                          LyraPlaylist pl = new LyraPlaylist(obj.getString("name"));
+                          JSONArray uriArr = obj.getJSONArray("uris");
+                          for (int j = 0; j < uriArr.length(); j++) pl.uris.add(uriArr.getString(j));
+                          playlists.add(pl);
+                      }
+                  } catch (Exception ignored) {}
+              }
+
+              private void initEqUI() {
+                  if (eqInitialized || !serviceBound) return;
+                  eqInitialized = true;
+                  short numBands = lyraService.getNumBands();
+                  short[] range = lyraService.getBandLevelRange();
+                  for (short i = 0; i < Math.min(numBands, 5); i++) {
+                      int freqHz = lyraService.getBandFreq(i) / 1000;
+                      eqLabels[i].setText(freqHz >= 1000 ? (freqHz/1000)+"kHz" : freqHz+"Hz");
+                      short current = lyraService.getBandLevel(i);
+                      int span = range[1] - range[0];
+                      int progress = span > 0 ? (int)(((current - range[0]) * 20.0f) / span) : 10;
+                      eqBands[i].setProgress(Math.max(0, Math.min(20, progress)));
+                      int db = current / 100;
+                      eqVals[i].setText((db >= 0 ? "+" : "") + db + "dB");
+                  }
+              }
+
+              private void checkPermissionAndLoad() {
+                  String perm = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                      ? Manifest.permission.READ_MEDIA_AUDIO : Manifest.permission.READ_EXTERNAL_STORAGE;
+                  if (ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED) loadMediaStore();
+                  else permissionLauncher.launch(perm);
+              }
+
+              private void loadMediaStore() {
+                  allTracks.clear(); displayedTracks.clear();
+                  new Thread(() -> {
+                      Uri collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                      String[] projection = { MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE, MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM, MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.SIZE, MediaStore.Audio.Media.MIME_TYPE };
+                      try (Cursor cursor = getContentResolver().query(collection, projection, MediaStore.Audio.Media.IS_MUSIC + " != 0", null, null)) {
+                          if (cursor != null) {
+                              while (cursor.moveToNext()) {
+                                  long id = cursor.getLong(0); String tit = cursor.getString(1);
+                                  String art = cursor.getString(2); String alb = cursor.getString(3);
+                                  long durMs = cursor.getLong(4); long sizeKb = cursor.getLong(5) / 1024;
+                                  String mime = cursor.getString(6);
+                                  String ext = mime != null ? mime.substring(mime.lastIndexOf("/")+1).toUpperCase() : "AUDIO";
+                                  String meta = ext + " | " + String.format(Locale.US, "%.1f MB", sizeKb/1024.0);
+                                  Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(id));
+                                  allTracks.add(new TrackInfo(MediaItem.fromUri(uri), tit, art, alb, meta, formatTime(durMs), null, uri));
+                              }
+                          }
+                      } catch (Exception ignored) {}
+                      runOnUiThread(() -> {
+                          displayedTracks.addAll(allTracks); adapter.notifyDataSetChanged();
+                          if (!allTracks.isEmpty()) {
+                              currentIndex = getSharedPreferences(PREFS, MODE_PRIVATE).getInt(KEY_INDEX, 0);
+                              List<MediaItem> items = allTracks.stream().map(t -> t.mediaItem).collect(Collectors.toList());
+                              mediaController.setMediaItems(items, currentIndex, 0); mediaController.prepare();
+                              updateUI(currentIndex); handler.postDelayed(this::initVisualizer, 800);
+                          }
+                      });
+                  }).start();
+              }
+
+              private void loadAlbumArt(int index) {
+                  if (index >= allTracks.size()) return;
+                  TrackInfo t = allTracks.get(index);
+                  new Thread(() -> {
+                      Bitmap art = null;
+                      try {
+                          MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                          mmr.setDataSource(getApplicationContext(), t.uri);
+                          byte[] bytes = mmr.getEmbeddedPicture(); mmr.release();
+                          if (bytes != null) art = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                      } catch (Exception ignored) {}
+                      t.albumArt = art;
+                      final Bitmap finalArt = art;
+                      runOnUiThread(() -> { if (currentIndex == index) { if (finalArt != null) albumArt.setImageBitmap(finalArt); else albumArt.setImageResource(android.R.drawable.ic_media_play); } });
+                  }).start();
+              }
+
+              private void updateUI(int index) {
+                  currentIndex = index; if (index >= allTracks.size()) return;
+                  TrackInfo t = allTracks.get(index);
+                  trackTitle.setText(t.title); trackArtist.setText(t.artist.isEmpty() ? "Artista desconocido" : t.artist);
+                  trackAlbum.setText(t.album); trackMeta.setText(t.meta);
+                  trackNumber.setText((index+1) + " / " + allTracks.size()); timeTotal.setText(t.duration);
+                  adapter.setCurrentIndex(displayedTracks.indexOf(t)); loadAlbumArt(index);
+                  getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt(KEY_INDEX, index).apply();
+              }
+
+              private void playAt(int index) { if (mediaController == null) return; mediaController.seekToDefaultPosition(index); mediaController.play(); }
+              private void advanceTrack(int direction) { if (allTracks.isEmpty()) return; playAt((currentIndex + direction + allTracks.size()) % allTracks.size()); }
+              private void toggleShuffle() { isShuffled = !isShuffled; btnShuffle.setTextColor(isShuffled ? 0xFF00FF00 : 0xFF555555); }
+              private void cycleRepeat() { repeatMode = (repeatMode+1)%3; btnRepeat.setTextColor(repeatMode==0 ? 0xFF555555 : (repeatMode==1 ? 0xFF00FF00 : 0xFF00BFFF)); }
+              private String formatTime(long ms) { long s = ms/1000; return String.format(Locale.US, "%d:%02d", s/60, s%60); }
+
+              @Override
+              protected void onDestroy() {
+                  super.onDestroy(); handler.removeCallbacks(updateProgress); lyraVisualizer.release();
+                  if (serviceBound) unbindService(eqConnection); MediaController.releaseFuture(controllerFuture);
+              }
+          }
+          EOF
+
+      - name: Write VUMeterView.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/VUMeterView.java
+          package com.lyra.audiokernel;
+
+          import android.content.Context;
+          import android.graphics.Canvas;
+          import android.graphics.Color;
+          import android.graphics.Paint;
+          import android.graphics.RadialGradient;
+          import android.graphics.RectF;
+          import android.graphics.Shader;
+          import android.util.AttributeSet;
+          import android.view.View;
+
+          public class VUMeterView extends View {
+
+              private float rawLevel = 0f, displayLevel = 0f;
+              private static final float ATTACK = 0.45f, DECAY = 0.05f;
+              private static final float ANGLE_MIN = -50f, ANGLE_MAX = 50f;
+              private String label = "L";
+              private Paint bgPaint, arcGreenPaint, arcRedPaint, tickPaint;
+              private Paint needlePaint, needleShadowPaint, pivotPaint, labelPaint, glowPaint;
+              private RectF arcRect = new RectF();
+              private float cx, pivotY, arcRadius;
+
+              public VUMeterView(Context context, AttributeSet attrs) { super(context, attrs); init(); setLayerType(LAYER_TYPE_SOFTWARE, null); }
+              public VUMeterView(Context context) { super(context); init(); setLayerType(LAYER_TYPE_SOFTWARE, null); }
+
+              private void init() {
+                  bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG); bgPaint.setColor(Color.parseColor("#1C1200")); bgPaint.setStyle(Paint.Style.FILL);
+                  arcGreenPaint = new Paint(Paint.ANTI_ALIAS_FLAG); arcGreenPaint.setStyle(Paint.Style.STROKE); arcGreenPaint.setStrokeWidth(5f); arcGreenPaint.setColor(Color.parseColor("#44BB44")); arcGreenPaint.setAlpha(120);
+                  arcRedPaint = new Paint(Paint.ANTI_ALIAS_FLAG); arcRedPaint.setStyle(Paint.Style.STROKE); arcRedPaint.setStrokeWidth(5f); arcRedPaint.setColor(Color.parseColor("#FF3300")); arcRedPaint.setAlpha(140);
+                  tickPaint = new Paint(Paint.ANTI_ALIAS_FLAG); tickPaint.setStrokeWidth(1.2f);
+                  needleShadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG); needleShadowPaint.setColor(Color.parseColor("#CC2200")); needleShadowPaint.setStrokeWidth(4f); needleShadowPaint.setAlpha(80);
+                  needlePaint = new Paint(Paint.ANTI_ALIAS_FLAG); needlePaint.setStrokeWidth(2f); needlePaint.setShadowLayer(6f,0f,0f,Color.parseColor("#FF4400")); needlePaint.setStyle(Paint.Style.STROKE); needlePaint.setStrokeCap(Paint.Cap.ROUND);
+                  pivotPaint = new Paint(Paint.ANTI_ALIAS_FLAG); pivotPaint.setColor(Color.parseColor("#888888")); pivotPaint.setStyle(Paint.Style.FILL);
+                  labelPaint = new Paint(Paint.ANTI_ALIAS_FLAG); labelPaint.setColor(Color.parseColor("#E89009")); labelPaint.setTextSize(18f); labelPaint.setTextAlign(Paint.Align.CENTER); labelPaint.setTypeface(android.graphics.Typeface.MONOSPACE); labelPaint.setShadowLayer(6f,0f,0f,Color.parseColor("#FF8800"));
+                  glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG); glowPaint.setStyle(Paint.Style.FILL);
+              }
+
+              @Override
+              protected void onSizeChanged(int w, int h, int oldW, int oldH) {
+                  super.onSizeChanged(w, h, oldW, oldH);
+                  cx = w/2f; pivotY = h*1.05f; arcRadius = pivotY - h*0.12f;
+                  arcRect.set(cx-arcRadius, pivotY-arcRadius, cx+arcRadius, pivotY+arcRadius);
+                  glowPaint.setShader(new RadialGradient(cx, h*0.5f, w*0.6f, Color.parseColor("#22180800"), Color.parseColor("#00000000"), Shader.TileMode.CLAMP));
+              }
+
+              public void setLevel(float level) {
+                  rawLevel = Math.max(0f, Math.min(1f, level));
+                  float diff = rawLevel - displayLevel;
+                  displayLevel += (diff > 0) ? diff*ATTACK : diff*DECAY;
+                  postInvalidateOnAnimation();
+              }
+
+              public void setChannelLabel(String l) { this.label = l; invalidate(); }
+
+              @Override
+              protected void onDraw(Canvas canvas) {
+                  super.onDraw(canvas);
+                  int w = getWidth(), h = getHeight();
+                  canvas.drawRoundRect(new RectF(0,0,w,h), 12f, 12f, bgPaint);
+                  canvas.drawRoundRect(new RectF(0,0,w,h), 12f, 12f, glowPaint);
+                  float startAngle = 270f+ANGLE_MIN, sweep = ANGLE_MAX-ANGLE_MIN;
+                  canvas.drawArc(arcRect, startAngle, sweep*0.75f, false, arcGreenPaint);
+                  canvas.drawArc(arcRect, startAngle+sweep*0.75f, sweep*0.25f, false, arcRedPaint);
+                  for (int i = 0; i <= 9; i++) {
+                      float frac = (float)i/9;
+                      double rad = Math.toRadians(270f+ANGLE_MIN+frac*sweep);
+                      float ox=cx+(float)((arcRadius+4f)*Math.cos(rad)), oy=pivotY+(float)((arcRadius+4f)*Math.sin(rad));
+                      float ix=cx+(float)((arcRadius-(i%2==0?10f:6f))*Math.cos(rad)), iy=pivotY+(float)((arcRadius-(i%2==0?10f:6f))*Math.sin(rad));
+                      tickPaint.setColor(frac>0.75f?Color.parseColor("#FF4400"):Color.parseColor("#AA8833"));
+                      tickPaint.setStrokeWidth(i%2==0?1.5f:1f);
+                      canvas.drawLine(ox,oy,ix,iy,tickPaint);
+                  }
+                  double rad = Math.toRadians(270f+ANGLE_MIN+displayLevel*sweep);
+                  float tipX=cx+(float)((arcRadius-8f)*Math.cos(rad)), tipY=pivotY+(float)((arcRadius-8f)*Math.sin(rad));
+                  canvas.drawLine(cx,pivotY,tipX+1f,tipY+1f,needleShadowPaint);
+                  needlePaint.setColor(displayLevel>0.8f?Color.parseColor("#FF2200"):Color.parseColor("#DDCCBB"));
+                  canvas.drawLine(cx,pivotY,tipX,tipY,needlePaint);
+                  canvas.drawCircle(cx,pivotY,5f,pivotPaint);
+                  Paint inner=new Paint(Paint.ANTI_ALIAS_FLAG); inner.setColor(Color.parseColor("#222222"));
+                  canvas.drawCircle(cx,pivotY,2.5f,inner);
+                  canvas.drawText("VU",cx,h-4f,labelPaint);
+                  Paint ch=new Paint(labelPaint); ch.setTextSize(13f); ch.setColor(Color.parseColor("#AA7722"));
+                  canvas.drawText(label,14f,h-6f,ch);
+              }
+          }
+          EOF
+
+      - name: Write SpectrumView.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/SpectrumView.java
+          package com.lyra.audiokernel;
+
+          import android.content.Context;
+          import android.graphics.Canvas;
+          import android.graphics.Color;
+          import android.graphics.LinearGradient;
+          import android.graphics.Paint;
+          import android.graphics.RectF;
+          import android.graphics.Shader;
+          import android.util.AttributeSet;
+          import android.view.View;
+
+          public class SpectrumView extends View {
+
+              private static final int BANDS=32, PEAK_HOLD=35;
+              private static final float ATTACK=0.40f, DECAY=0.07f;
+              private float[] rawBands=new float[BANDS], smoothBands=new float[BANDS], peaks=new float[BANDS];
+              private int[] peakTimers=new int[BANDS];
+              private Paint gridPaint, peakPaint, bgPaint, barPaint;
+              private RectF barRect=new RectF();
+
+              public SpectrumView(Context context, AttributeSet attrs) { super(context,attrs); init(); }
+              public SpectrumView(Context context) { super(context); init(); }
+
+              private void init() {
+                  bgPaint=new Paint(Paint.ANTI_ALIAS_FLAG); bgPaint.setColor(Color.parseColor("#050A0D"));
+                  gridPaint=new Paint(Paint.ANTI_ALIAS_FLAG); gridPaint.setColor(Color.parseColor("#0D2020")); gridPaint.setStyle(Paint.Style.STROKE); gridPaint.setStrokeWidth(1f);
+                  barPaint=new Paint(Paint.ANTI_ALIAS_FLAG);
+                  peakPaint=new Paint(Paint.ANTI_ALIAS_FLAG); peakPaint.setStyle(Paint.Style.FILL);
+              }
+
+              @Override
+              protected void onSizeChanged(int w, int h, int oldW, int oldH) {
+                  super.onSizeChanged(w,h,oldW,oldH);
+                  barPaint.setShader(new LinearGradient(0,h,0,0,
+                      new int[]{Color.parseColor("#00BCD4"),Color.parseColor("#00E676"),Color.parseColor("#AAFF00"),Color.parseColor("#FF8800"),Color.parseColor("#FF2200")},
+                      new float[]{0f,0.45f,0.72f,0.88f,1f}, Shader.TileMode.CLAMP));
+              }
+
+              public void updateFromFFT(byte[] fft, int size) {
+                  int n=Math.min(BANDS,size/2);
+                  for (int i=0;i<n;i++) {
+                      float re=fft[i*2], im=(i*2+1<size)?fft[i*2+1]:0f;
+                      rawBands[i]=(float)Math.min(1.0,Math.log10(Math.hypot(re,im)+1)/2.5);
+                  }
+                  postInvalidateOnAnimation();
+              }
+
+              public void updateBands(float[] normalized) {
+                  System.arraycopy(normalized,0,rawBands,0,Math.min(BANDS,normalized.length));
+                  postInvalidateOnAnimation();
+              }
+
+              @Override
+              protected void onDraw(Canvas canvas) {
+                  super.onDraw(canvas);
+                  int w=getWidth(), h=getHeight();
+                  canvas.drawRect(0,0,w,h,bgPaint);
+                  for (int i=1;i<=4;i++) canvas.drawLine(0,h*(i/4f),w,h*(i/4f),gridPaint);
+                  float barW=(w-1.5f*(BANDS-1))/BANDS;
+                  for (int i=0;i<BANDS;i++) {
+                      float diff=rawBands[i]-smoothBands[i];
+                      smoothBands[i]=Math.max(0f,Math.min(1f,smoothBands[i]+(diff>0?diff*ATTACK:diff*DECAY)));
+                      if (smoothBands[i]>=peaks[i]) { peaks[i]=smoothBands[i]; peakTimers[i]=PEAK_HOLD; }
+                      else if (peakTimers[i]>0) peakTimers[i]--;
+                      else peaks[i]=Math.max(0f,peaks[i]-0.006f);
+                      float x0=i*(barW+1.5f), barH=smoothBands[i]*h;
+                      barRect.set(x0,h-barH,x0+barW,h); canvas.drawRect(barRect,barPaint);
+                      if (barH>3f) { Paint t=new Paint(Paint.ANTI_ALIAS_FLAG); t.setColor(Color.argb(60,255,255,255)); canvas.drawRect(x0,h-barH,x0+barW,h-barH+2f,t); }
+                      float py=h-peaks[i]*h;
+                      peakPaint.setColor(peaks[i]>0.88f?Color.parseColor("#FF2200"):peaks[i]>0.65f?Color.parseColor("#AAFF00"):Color.parseColor("#00E676"));
+                      canvas.drawRect(x0,py,x0+barW,py+2.5f,peakPaint);
+                  }
+              }
+          }
+          EOF
+
+      - name: Write NixieDisplayView.java
+        run: |
+          cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/NixieDisplayView.java
+          package com.lyra.audiokernel;
+
+          import android.content.Context;
+          import android.graphics.Canvas;
+          import android.graphics.Color;
+          import android.graphics.Paint;
+          import android.graphics.RadialGradient;
+          import android.graphics.RectF;
+          import android.graphics.Shader;
+          import android.graphics.Typeface;
+          import android.util.AttributeSet;
+          import android.view.View;
+
+          public class NixieDisplayView extends View {
+
+              private String displayStr="0000";
+              private boolean sepVisible=true;
+              private long lastBlink=0;
+              private Paint tubeBgPaint,tubeGlowPaint,digitPaint,dimDigitPaint,sepPaint,outerGlowPaint,glassPaint;
+              private float tubeW,tubeH,tubeRadius,digitSize;
+              private float[] tubeX=new float[4];
+              private float sepX;
+
+              public NixieDisplayView(Context context, AttributeSet attrs) { super(context,attrs); init(); setLayerType(LAYER_TYPE_SOFTWARE,null); }
+              public NixieDisplayView(Context context) { super(context); init(); setLayerType(LAYER_TYPE_SOFTWARE,null); }
+
+              private void init() {
+                  tubeBgPaint=new Paint(Paint.ANTI_ALIAS_FLAG); tubeBgPaint.setColor(Color.parseColor("#120A00")); tubeBgPaint.setStyle(Paint.Style.FILL);
+                  tubeGlowPaint=new Paint(Paint.ANTI_ALIAS_FLAG); tubeGlowPaint.setColor(Color.parseColor("#FF8C00")); tubeGlowPaint.setStyle(Paint.Style.STROKE); tubeGlowPaint.setStrokeWidth(1.5f); tubeGlowPaint.setShadowLayer(10f,0f,0f,Color.parseColor("#FFAA00"));
+                  digitPaint=new Paint(Paint.ANTI_ALIAS_FLAG); digitPaint.setColor(Color.parseColor("#FFB300")); digitPaint.setTextAlign(Paint.Align.CENTER); digitPaint.setTypeface(Typeface.MONOSPACE); digitPaint.setShadowLayer(16f,0f,0f,Color.parseColor("#FF8C00"));
+                  dimDigitPaint=new Paint(digitPaint); dimDigitPaint.setColor(Color.parseColor("#2A1800")); dimDigitPaint.setShadowLayer(0,0,0,0); dimDigitPaint.setAlpha(60);
+                  sepPaint=new Paint(digitPaint);
+                  glassPaint=new Paint(Paint.ANTI_ALIAS_FLAG); glassPaint.setColor(Color.argb(18,255,255,255)); glassPaint.setStyle(Paint.Style.FILL);
+                  outerGlowPaint=new Paint(Paint.ANTI_ALIAS_FLAG); outerGlowPaint.setStyle(Paint.Style.FILL);
+              }
+
+              @Override protected void onSizeChanged(int w,int h,int oldW,int oldH) { super.onSizeChanged(w,h,oldW,oldH); recalcLayout(w,h); }
+
+              private void recalcLayout(int w,int h) {
+                  float sepRatio=0.38f,gapRatio=0.12f;
+                  tubeW=(w*0.92f)/(4f+sepRatio+4f*gapRatio);
+                  tubeH=h*0.88f; tubeRadius=tubeW*0.18f; digitSize=tubeH*0.62f;
+                  digitPaint.setTextSize(digitSize); dimDigitPaint.setTextSize(digitSize); sepPaint.setTextSize(digitSize*0.9f);
+                  float gap=tubeW*gapRatio, offsetX=(w-(4*tubeW+(tubeW*sepRatio)+4*gap))/2f;
+                  tubeX[0]=offsetX; tubeX[1]=tubeX[0]+tubeW+gap;
+                  sepX=tubeX[1]+tubeW+gap*0.5f;
+                  tubeX[2]=sepX+tubeW*sepRatio+gap*0.5f; tubeX[3]=tubeX[2]+tubeW+gap;
+                  outerGlowPaint.setShader(new RadialGradient(tubeW/2f,tubeH/2f,tubeW*0.7f,Color.parseColor("#33FF8800"),Color.parseColor("#00000000"),Shader.TileMode.CLAMP));
+              }
+
+              public void setTime(long ms, boolean isPlaying) {
+                  long s=ms/1000; displayStr=String.format("%02d%02d",(int)(s/60)%100,(int)(s%60));
+                  if (isPlaying&&System.currentTimeMillis()-lastBlink>500) { sepVisible=!sepVisible; lastBlink=System.currentTimeMillis(); }
+                  else if (!isPlaying) sepVisible=true;
+                  postInvalidateOnAnimation();
+              }
+
+              @Override
+              protected void onDraw(Canvas canvas) {
+                  super.onDraw(canvas);
+                  int h=getHeight(); float tubeTop=(h-tubeH)/2f;
+                  if (tubeW<=0) recalcLayout(getWidth(),h);
+                  char[] digits=displayStr.length()==4?displayStr.toCharArray():new char[]{'0','0','0','0'};
+                  for (int i=0;i<4;i++) drawTube(canvas,tubeX[i],tubeTop,digits[i]);
+                  if (sepVisible) { sepPaint.setColor(Color.parseColor("#FFB300")); sepPaint.setShadowLayer(14f,0f,0f,Color.parseColor("#FF8C00")); }
+                  else { sepPaint.setColor(Color.parseColor("#2A1800")); sepPaint.setShadowLayer(0f,0f,0f,0); }
+                  canvas.drawText(":",sepX+(tubeW*0.38f)/2f,tubeTop+tubeH*0.68f,sepPaint);
+              }
+
+              private void drawTube(Canvas canvas,float x,float top,char d) {
+                  RectF r=new RectF(x,top,x+tubeW,top+tubeH);
+                  canvas.drawRoundRect(r,tubeRadius,tubeRadius,tubeBgPaint);
+                  canvas.save(); canvas.translate(x,top);
+                  canvas.drawRoundRect(new RectF(0,0,tubeW,tubeH),tubeRadius,tubeRadius,outerGlowPaint);
+                  canvas.restore();
+                  canvas.drawRoundRect(r,tubeRadius,tubeRadius,tubeGlowPaint);
+                  canvas.drawRoundRect(new RectF(x+2,top+2,x+tubeW-2,top+tubeH*0.32f),tubeRadius,tubeRadius,glassPaint);
+                  canvas.drawText("8",x+tubeW/2f,top+tubeH*0.70f,dimDigitPaint);
+                  canvas.drawText(String.valueOf(d),x+tubeW/2f,top+tubeH*0.70f,digitPaint);
+              }
+          }
+          EOF
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lyra-audio-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
