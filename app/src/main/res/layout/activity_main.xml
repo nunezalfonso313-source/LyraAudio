@@ -161,12 +161,13 @@
             android:gravity="center_vertical">
 
             <Button
-                android:id="@+id/btn_shuffle"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:text="⇀"
-                android:background="@android:color/transparent"
-                android:textColor="#555555"/>
+            android:id="@+id/btn_shuffle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"   
+            android:layout_weight="1"
+            android:text="_"
+            android:background="@android:color/transparent"
+            android:textColor="#555555"/>
 
             <Button
                 android:id="@+id/btn_prev"
