@@ -37,5 +37,12 @@ public class LyraPlaybackService extends MediaSessionService {
         }
         super.onDestroy();
     }
+    public short getBandFreq(short band) {
+    return equalizer.getCenterFreq(band);
+}
+
+public short getBandLevel(short band) {
+    return equalizer.getBandLevel(band);
+}
 }
 
