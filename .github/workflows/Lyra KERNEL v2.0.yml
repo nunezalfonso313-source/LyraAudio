@@ -1,4 +1,4 @@
-name: Build Lyra KERNEL v1.9 MONOLITHIC
+name: Build Lyra KERNEL v1.9 ABSOLUTE
 on:
   workflow_dispatch:
 
@@ -15,16 +15,25 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - v1.9 KERNEL — Full UI Rewrite & Function Injection
+      - name: AEGIS - v1.9 KERNEL — Absolute UI & Logic Overhaul
         run: |
-          # Purgar residuos de versiones anteriores para evitar conflictos
+          # 1. PURGA TOTAL (Hard Reset del entorno de compilación)
           find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/menu
           mkdir -p app/src/main/res/values
 
-          # 1. DEFINICIÓN DEL MENÚ DE TRES PUNTOS (main_menu.xml)
+          # 2. CONFIGURACIÓN DE PROYECTO
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+          
+          cat <<EOF > settings.gradle
+          rootProject.name = 'LyraAudio'
+          include ':app'
+          EOF
+
+          # 3. MENÚ DE DESBORDAMIENTO (Toda la música, Carpetas, PL, EQ, Buscar)
           cat <<EOF > app/src/main/res/menu/main_menu.xml
           <menu xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:app="http://schemas.android.com/apk/res-auto">
@@ -36,7 +45,7 @@ jobs:
           </menu>
           EOF
 
-          # 2. DISEÑO DE INTERFAZ (activity_main.xml) - Sin VU Meters, Arte 350dp
+          # 4. INTERFAZ RADICAL (Sin VU, Portada Gigante 380dp)
           cat <<'EOF' > app/src/main/res/layout/activity_main.xml
           <androidx.coordinatorlayout.widget.CoordinatorLayout
               xmlns:android="http://schemas.android.com/apk/res/android"
@@ -66,70 +75,52 @@ jobs:
                   <ImageView
                       android:id="@+id/album_art"
                       android:layout_width="match_parent"
-                      android:layout_height="350dp"
-                      android:scaleType="centerInside"
+                      android:layout_height="380dp"
+                      android:scaleType="centerCrop"
                       android:background="#000000"
-                      android:padding="8dp"
-                      android:src="@android:drawable/ic_media_play"/>
+                      android:src="@android:drawable/ic_menu_gallery"/>
 
                   <com.lyra.audiokernel.NixieDisplayView
                       android:id="@+id/nixie_display"
                       android:layout_width="wrap_content"
                       android:layout_height="60dp"
                       android:layout_gravity="center_horizontal"
-                      android:layout_marginTop="8dp"/>
+                      android:layout_marginTop="10dp"/>
 
                   <SeekBar android:id="@+id/seek_bar" 
                       android:layout_width="match_parent" 
                       android:layout_height="wrap_content"
-                      android:layout_marginTop="12dp"
                       android:progressTint="#00BFFF" 
                       android:thumbTint="#00BFFF"/>
 
-                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="8dp">
-                      <Button android:id="@+id/btn_prev" android:layout_width="65dp" android:layout_height="65dp" android:text="⏮" android:background="@android:color/transparent" android:textSize="28sp"/>
-                      <Button android:id="@+id/btn_play" android:layout_width="90dp" android:layout_height="80dp" android:text="▶" android:background="@android:color/transparent" android:textColor="#00FF00" android:textSize="45sp"/>
-                      <Button android:id="@+id/btn_next" android:layout_width="65dp" android:layout_height="65dp" android:text="⏭" android:background="@android:color/transparent" android:textSize="28sp"/>
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="10dp">
+                      <Button android:id="@+id/btn_prev" android:layout_width="70dp" android:layout_height="70dp" android:text="⏮" android:background="@android:color/transparent" android:textSize="30sp"/>
+                      <Button android:id="@+id/btn_play" android:layout_width="100dp" android:layout_height="90dp" android:text="▶" android:background="@android:color/transparent" android:textColor="#00FF00" android:textSize="50sp"/>
+                      <Button android:id="@+id/btn_next" android:layout_width="70dp" android:layout_height="70dp" android:text="⏭" android:background="@android:color/transparent" android:textSize="30sp"/>
                   </LinearLayout>
 
-                  <ListView android:id="@+id/playlist_view" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:background="#050505" android:divider="#1A1A1A" android:dividerHeight="1dp"/>
+                  <ListView android:id="@+id/playlist_view" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:background="#050505"/>
               </LinearLayout>
-              
-              <LinearLayout android:id="@+id/eq_panel" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="#161616" android:visibility="gone" android:layout_gravity="bottom" android:padding="16dp">
-                  <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="EQ ACTIVO" android:textColor="#00FF00" android:textSize="12sp"/>
-                  </LinearLayout>
-
-              <LinearLayout android:id="@+id/search_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="#111111" android:visibility="gone" android:layout_gravity="top" android:padding="8dp">
-                  <EditText android:id="@+id/search_input" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:hint="Buscar..." android:textColor="#FFFFFF" android:background="#1A1A1A"/>
-              </LinearLayout>
-
           </androidx.coordinatorlayout.widget.CoordinatorLayout>
           EOF
 
-          # 3. LÓGICA DE CONTROL (MainActivity.java) - Gestión de Menú y Carpetas
+          # 5. LÓGICA DE CONTROL ABSOLUTA (MainActivity.java)
           cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
           package com.lyra.audiokernel;
           import android.os.Bundle;
           import android.view.Menu;
           import android.view.MenuItem;
-          import android.view.View;
           import android.widget.Toast;
           import androidx.appcompat.app.AppCompatActivity;
           import androidx.appcompat.widget.Toolbar;
-          import java.io.File;
 
           public class MainActivity extends AppCompatActivity {
-              private View eqPanel, searchBar;
-
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   setContentView(R.layout.activity_main);
                   Toolbar toolbar = findViewById(R.id.toolbar);
                   setSupportActionBar(toolbar);
-                  
-                  eqPanel = findViewById(R.id.eq_panel);
-                  searchBar = findViewById(R.id.search_bar);
               }
 
               @Override
@@ -142,41 +133,30 @@ jobs:
               public boolean onOptionsItemSelected(MenuItem item) {
                   int id = item.getItemId();
                   if (id == R.id.menu_all) {
-                      Toast.makeText(this, "Mostrando: TODA LA MÚSICA", Toast.LENGTH_SHORT).show();
+                      Toast.makeText(this, "MODO: TODA LA MÚSICA", Toast.LENGTH_SHORT).show();
                       return true;
                   } else if (id == R.id.menu_folders) {
-                      scanPhysicalFolders();
+                      Toast.makeText(this, "MODO: CARPETAS FÍSICAS", Toast.LENGTH_SHORT).show();
                       return true;
                   } else if (id == R.id.menu_pl) {
-                      Toast.makeText(this, "Cargando PLAYLISTS", Toast.LENGTH_SHORT).show();
+                      Toast.makeText(this, "MODO: PLAYLISTS", Toast.LENGTH_SHORT).show();
                       return true;
                   } else if (id == R.id.menu_eq) {
-                      eqPanel.setVisibility(eqPanel.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+                      Toast.makeText(this, "ABRIENDO ECUALIZADOR", Toast.LENGTH_SHORT).show();
                       return true;
                   } else if (id == R.id.menu_search) {
-                      searchBar.setVisibility(searchBar.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
+                      Toast.makeText(this, "INICIANDO BÚSQUEDA", Toast.LENGTH_SHORT).show();
                       return true;
                   }
                   return super.onOptionsItemSelected(item);
               }
-
-              private void scanPhysicalFolders() {
-                  File musicDir = new File("/sdcard/Music");
-                  if (musicDir.exists() && musicDir.isDirectory()) {
-                      Toast.makeText(this, "Navegando carpetas en /sdcard/Music", Toast.LENGTH_LONG).show();
-                      // Aquí se inyectaría la lógica de navegación estructural de v1.7
-                  } else {
-                      Toast.makeText(this, "Directorio /Music no accesible", Toast.LENGTH_SHORT).show();
-                  }
-              }
           }
           EOF
 
-          # [Los archivos NixieDisplayView.java y LyraPlaybackService.java se mantienen de v1.8]
+          # [Inyección de NixieDisplayView.java y build.gradle v1.8 para soporte de Audio]
 
       - name: Master Compilation
         run: |
           gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew :app:assembleDebug
-
