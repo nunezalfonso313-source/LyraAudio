@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+8<?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -296,6 +296,41 @@
                 android:text="✕"
                 android:background="@android:color/transparent"
                 android:textColor="#AAAAAA"/>
+               <Button
+                android:id="@+id/btn_eq"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="EQ"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#CCCCCC"
+                android:textSize="12sp"/>
+
+            <Button
+                android:id="@+id/btn_sort"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="AZ ARTISTA"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#CCCCCC"
+                android:textSize="12sp"/>
+
+            <Button
+                android:id="@+id/btn_search"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="BUSCAR"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#CCCCCC"
+                android:textSize="12sp"/>
+
+            <Button
+                android:id="@+id/btn_playlists"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="PL"
+                android:backgroundTint="#1A1A1A"
+                android:textColor="#CCCCCC"
+                android:textSize="12sp"/>
         </LinearLayout>
 
         <!-- Function Buttons (YA CON LAYOUT_HEIGHT) -->
