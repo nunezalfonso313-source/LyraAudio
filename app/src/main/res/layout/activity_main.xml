@@ -66,32 +66,7 @@
                     android:textColor="#00FF00"
                     android:textSize="11sp"/>
             </LinearLayout>
-        </LinearLayout>
-
-        <!-- VU Meters -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="96dp"
-            android:orientation="horizontal"
-            android:background="#0D0D0D"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp">
-
-            <com.lyra.audiokernel.VUMeterView
-                android:id="@+id/vu_left"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginEnd="4dp"/>
-
-            <com.lyra.audiokernel.VUMeterView
-                android:id="@+id/vu_right"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="4dp"/>
+        
         </LinearLayout>
 
         <!-- Nixie -->
