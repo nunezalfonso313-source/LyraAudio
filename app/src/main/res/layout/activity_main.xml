@@ -331,45 +331,6 @@
             android:layout_height="wrap_content"
             android:padding="8dp">
 
-            <Button
-                android:id="@+id/btn_eq"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="EQ"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_sort"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="AZ ARTISTA"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_search"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="BUSCAR"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_playlists"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="PL"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
         </LinearLayout>
 
         <!-- Playlist -->
