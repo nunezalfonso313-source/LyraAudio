@@ -636,50 +636,6 @@ public class MainActivity extends AppCompatActivity {
         long s = ms / 1000;
         return String.format(Locale.US, "%d:%02d", s / 60, s % 60);
 
-        public class MainActivity extends AppCompatActivity {
-
-    // otros métodos...
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-
-        int id = item.getItemId();
-
-        if (id == R.id.menu_all_music) {
-            openAllMusic();
-            return true;
-        }
-
-        if (id == R.id.menu_folders) {
-            openFolders();
-            return true;
-        }
-
-        if (id == R.id.menu_playlists) {
-            openPlaylists();
-            return true;
-        }
-
-        if (id == R.id.menu_equalizer) {
-            openEqualizer();
-            return true;
-        }
-
-        if (id == R.id.menu_search) {
-            openSearch();
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-        }
     }
 
     @Override
@@ -690,4 +646,43 @@ public class MainActivity extends AppCompatActivity {
         if (serviceBound) unbindService(eqConnection);
         MediaController.releaseFuture(controllerFuture);
     }
+    @Override
+public boolean onCreateOptionsMenu(Menu menu) {
+    getMenuInflater().inflate(R.menu.main_menu, menu);
+    return true;
+}
+
+@Override
+public boolean onOptionsItemSelected(MenuItem item) {
+
+    int id = item.getItemId();
+
+    if (id == R.id.menu_all_music) {
+        openAllMusic();
+        return true;
+    }
+
+    if (id == R.id.menu_folders) {
+        openFolders();
+        return true;
+    }
+
+    if (id == R.id.menu_playlists) {
+        openPlaylists();
+        return true;
+    }
+
+    if (id == R.id.menu_equalizer) {
+        openEqualizer();
+        return true;
+    }
+
+    if (id == R.id.menu_search) {
+        openSearch();
+        return true;
+    }
+
+    return super.onOptionsItemSelected(item);
+}
+
     }
