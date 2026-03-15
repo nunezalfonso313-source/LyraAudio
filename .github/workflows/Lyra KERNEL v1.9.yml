@@ -1,0 +1,119 @@
+name: Build Lyra KERNEL v1.9
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: AEGIS - v1.9 KERNEL — Menu Migration + Large Art
+        run: |
+          find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
+          mkdir -p app/src/main/java/com/lyra/audiokernel
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/menu
+          mkdir -p app/src/main/res/values
+
+          # ─────────────────────────────────────────────
+          # menu_main.xml — Menú de los tres puntos
+          # ─────────────────────────────────────────────
+          cat <<EOF > app/src/main/res/menu/main_menu.xml
+          <menu xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto">
+              <item android:id="@+id/menu_all" android:title="TODA LA MÚSICA" app:showAsAction="never" />
+              <item android:id="@+id/menu_folders" android:title="CARPETAS" app:showAsAction="never" />
+              <item android:id="@+id/menu_pl" android:title="PLAYLIST" app:showAsAction="never" />
+              <item android:id="@+id/menu_eq" android:title="ECUALIZADOR" app:showAsAction="never" />
+              <item android:id="@+id/menu_search" android:title="BUSCAR" app:showAsAction="never" />
+          </menu>
+          EOF
+
+          # ─────────────────────────────────────────────
+          # activity_main.xml — UI Limpia (Sin VU, Large Art)
+          # ─────────────────────────────────────────────
+          cat <<'EOF' > app/src/main/res/layout/activity_main.xml
+          <androidx.coordinatorlayout.widget.CoordinatorLayout
+              xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:background="#0A0A0A">
+              
+              <com.google.android.material.appbar.AppBarLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:background="#0A0A0A">
+                  <androidx.appcompat.widget.Toolbar
+                      android:id="@+id/toolbar"
+                      android:layout_width="match_parent"
+                      android:layout_height="?attr/actionBarSize"
+                      app:titleTextColor="#FFFFFF" />
+              </com.google.android.material.appbar.AppBarLayout>
+
+              <LinearLayout
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent"
+                  android:orientation="vertical"
+                  app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+                  <FrameLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="240dp"
+                      android:background="#111111">
+                      <ImageView
+                          android:id="@+id/album_art"
+                          android:layout_width="match_parent"
+                          android:layout_height="match_parent"
+                          android:scaleType="centerInside"
+                          android:src="@android:drawable/ic_media_play"/>
+                  </FrameLayout>
+
+                  <LinearLayout
+                      android:layout_width="match_parent"
+                      android:layout_height="wrap_content"
+                      android:orientation="vertical"
+                      android:padding="12dp">
+                      <TextView android:id="@+id/track_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:textSize="18sp" android:textStyle="bold" android:singleLine="true" android:ellipsize="marquee" />
+                      <TextView android:id="@+id/track_artist" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#00BFFF" android:textSize="14sp" />
+                  </LinearLayout>
+
+                  <com.lyra.audiokernel.NixieDisplayView
+                      android:id="@+id/nixie_display"
+                      android:layout_width="wrap_content"
+                      android:layout_height="50dp"
+                      android:layout_gravity="center_horizontal"/>
+
+                  <SeekBar android:id="@+id/seek_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:progressTint="#00BFFF" android:thumbTint="#00BFFF"/>
+                  
+                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center">
+                      <Button android:id="@+id/btn_prev" android:layout_width="60dp" android:layout_height="48dp" android:text="⏮" android:background="@android:color/transparent" android:textSize="20sp"/>
+                      <Button android:id="@+id/btn_play" android:layout_width="80dp" android:layout_height="60dp" android:text="▶" android:background="@android:color/transparent" android:textColor="#00FF00" android:textSize="30sp"/>
+                      <Button android:id="@+id/btn_next" android:layout_width="60dp" android:layout_height="48dp" android:text="⏭" android:background="@android:color/transparent" android:textSize="20sp"/>
+                  </LinearLayout>
+
+                  <LinearLayout android:id="@+id/eq_panel" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:background="#161616" android:visibility="gone">
+                      </LinearLayout>
+
+                  <ListView android:id="@+id/playlist_view" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:divider="#1A1A1A" android:dividerHeight="1dp"/>
+              </LinearLayout>
+          </androidx.coordinatorlayout.widget.CoordinatorLayout>
+          EOF
+
+          # [NOTA: Los archivos NixieDisplayView.java, TrackInfo.java, etc., se mantienen de v1.7]
+          # Se omite VUMeterView.java ya que fue eliminado por requerimiento.
+
+      - name: Master Compilation
+        run: |
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug
+
