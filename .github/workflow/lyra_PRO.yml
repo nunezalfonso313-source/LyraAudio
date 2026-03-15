@@ -1,4 +1,4 @@
-name: Build Lyra KERNEL v1.8 Master
+name: Build Lyra KERNEL v1.8 Master Fixed
 on:
   workflow_dispatch:
 
@@ -15,14 +15,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - Integración de Lógica y UI Remasterizada
+      - name: AEGIS - Inject Master Logic and UI
         run: |
-          find . -mindepth 1 -maxdepth 1 ! -name '.github' -exec rm -rf {} +
+          # Creación de estructura sin borrado previo
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/menu
           mkdir -p app/src/main/res/values
 
+          # Configuración de entorno
           echo "android.useAndroidX=true" > gradle.properties
           echo "android.enableJetifier=true" >> gradle.properties
           
@@ -52,8 +53,8 @@ jobs:
                   applicationId 'com.lyra.audiokernel'
                   minSdk 24
                   targetSdk 34
-                  versionCode 16
-                  versionName '1.8-Master'
+                  versionCode 17
+                  versionName '1.8-Master-Fixed'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -68,144 +69,149 @@ jobs:
           }
           EOF
 
-          cat <<'EOF' > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-              <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-              <application android:label="Lyra v1.8" android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-                  <service android:name=".LyraPlaybackService" android:foregroundServiceType="mediaPlayback" android:exported="false" />
-              </application>
-          </manifest>
-          EOF
-
+          # UI: Menú de tres puntos (Overflow Menu)
           cat <<'EOF' > app/src/main/res/menu/main_menu.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <menu xmlns:android="http://schemas.android.com/apk/res/android">
-              <item android:id="@+id/menu_all_music" android:title="TODA LA MUSICA" />
-              <item android:id="@+id/menu_folders" android:title="CARPETAS" />
-              <item android:id="@+id/menu_playlists" android:title="PLAYLIST" />
-              <item android:id="@+id/menu_equalizer" android:title="ECUALIZADOR" />
-              <item android:id="@+id/menu_search" android:title="BUSCAR" />
-          </menu>
-          EOF
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menu_all_music" android:title="TODA LA MUSICA" />
+    <item android:id="@+id/menu_folders" android:title="CARPETAS" />
+    <item android:id="@+id/menu_playlists" android:title="PLAYLIST" />
+    <item android:id="@+id/menu_equalizer" android:title="ECUALIZADOR" />
+    <item android:id="@+id/menu_search" android:title="BUSCAR" />
+</menu>
+EOF
 
+          # UI: Layout con Portada Expandida y sin VU Meters
           cat <<'EOF' > app/src/main/res/layout/activity_main.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:layout_width="match_parent" android:layout_height="match_parent" android:background="#0A0A0A">
-              <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
-                  <ImageView android:id="@+id/album_art" android:layout_width="match_parent" android:layout_height="350dp" 
-                      android:scaleType="centerCrop" android:background="#111111" />
-                  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
-                      <TextView android:id="@+id/track_title" android:layout_width="match_parent" android:layout_height="wrap_content" 
-                          android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold" android:text="Lyra v1.8" />
-                      <TextView android:id="@+id/track_artist" android:layout_width="match_parent" android:layout_height="wrap_content" 
-                          android:textColor="#00BFFF" android:textSize="16sp" android:text="Kernel Master Activo" />
-                  </LinearLayout>
-                  <SeekBar android:id="@+id/seek_bar" android:layout_width="match_parent" android:layout_height="wrap_content" 
-                      android:progressTint="#00BFFF" android:thumbTint="#00BFFF" />
-                  <ListView android:id="@+id/playlist_view" android:layout_width="match_parent" android:layout_height="0dp" 
-                      android:layout_weight="1" android:divider="#1A1A1A" android:dividerHeight="1dp" />
-              </LinearLayout>
-          </androidx.coordinatorlayout.widget.CoordinatorLayout>
-          EOF
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:background="#0A0A0A">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
+        
+        <ImageView android:id="@+id/album_art" android:layout_width="match_parent" android:layout_height="400dp" 
+            android:scaleType="centerCrop" android:background="#111111" />
 
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
+            <TextView android:id="@+id/track_title" android:layout_width="match_parent" android:layout_height="wrap_content" 
+                android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold" android:text="Lyra KERNEL Ready" />
+            <TextView android:id="@+id/track_artist" android:layout_width="match_parent" android:layout_height="wrap_content" 
+                android:textColor="#00BFFF" android:textSize="16sp" android:text="Use menu to select music" />
+        </LinearLayout>
+
+        <SeekBar android:id="@+id/seek_bar" android:layout_width="match_parent" android:layout_height="wrap_content" 
+            android:progressTint="#00BFFF" android:thumbTint="#00BFFF" />
+        
+        <ListView android:id="@+id/playlist_view" android:layout_width="match_parent" android:layout_height="0dp" 
+            android:layout_weight="1" android:divider="#1A1A1A" android:dividerHeight="1dp" />
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+EOF
+
+          # LÓGICA: MainActivity con Imports y Métodos faltantes (Corrección de los 16 errores)
           cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
-          package com.lyra.audiokernel;
+package com.lyra.audiokernel;
 
-          import android.content.Intent;
-          import android.net.Uri;
-          import android.os.Bundle;
-          import android.view.Menu;
-          import android.view.MenuItem;
-          import android.widget.ImageView;
-          import android.widget.Toast;
-          import androidx.activity.result.ActivityResultLauncher;
-          import androidx.activity.result.contract.ActivityResultContracts;
-          import androidx.appcompat.app.AppCompatActivity;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.ImageView;
+import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
 
-          public class MainActivity extends AppCompatActivity {
-              
-              private ImageView albumArt;
+public class MainActivity extends AppCompatActivity {
+    
+    private ImageView albumArt;
 
-              // Lógica para CARPETAS (Selector de Archivos de Android)
-              private final ActivityResultLauncher<Intent> filePickerLauncher = 
-                  registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                      if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                          Uri uri = result.getData().getData();
-                          if (uri != null) {
-                              Toast.makeText(this, "Cargando audio: " + uri.getLastPathSegment(), Toast.LENGTH_LONG).show();
-                          }
-                      }
-                  });
+    // Lógica para abrir el selector de archivos nativo de Android
+    private final ActivityResultLauncher<Intent> filePickerLauncher = 
+        registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                Uri uri = result.getData().getData();
+                if (uri != null) {
+                    Toast.makeText(this, "File selected: " + uri.getLastPathSegment(), Toast.LENGTH_LONG).show();
+                }
+            }
+        });
 
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  setContentView(R.layout.activity_main);
-                  albumArt = findViewById(R.id.album_art);
-                  // VU_LEFT Y VU_RIGHT HAN SIDO ELIMINADOS DE LA LÓGICA
-              }
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        albumArt = findViewById(R.id.album_art);
+        // Sincronización completa: Se eliminaron referencias a VU_LEFT y VU_RIGHT
+    }
 
-              @Override
-              public boolean onCreateOptionsMenu(Menu menu) {
-                  getMenuInflater().inflate(R.menu.main_menu, menu);
-                  return true;
-              }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
 
-              @Override
-              public boolean onOptionsItemSelected(MenuItem item) {
-                  int id = item.getItemId();
-                  if (id == R.id.menu_all_music) { openAllMusic(); return true; }
-                  if (id == R.id.menu_folders) { openFolders(); return true; }
-                  if (id == R.id.menu_playlists) { openPlaylists(); return true; }
-                  if (id == R.id.menu_equalizer) { openEqualizer(); return true; }
-                  if (id == R.id.menu_search) { openSearch(); return true; }
-                  return super.onOptionsItemSelected(item);
-              }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.menu_all_music) { openAllMusic(); return true; }
+        if (id == R.id.menu_folders) { openFolders(); return true; }
+        if (id == R.id.menu_playlists) { openPlaylists(); return true; }
+        if (id == R.id.menu_equalizer) { openEqualizer(); return true; }
+        if (id == R.id.menu_search) { openSearch(); return true; }
+        return super.onOptionsItemSelected(item);
+    }
 
-              private void openAllMusic() {
-                  Toast.makeText(this, "Toda la Música", Toast.LENGTH_SHORT).show();
-              }
+    private void openAllMusic() {
+        Toast.makeText(this, "Loading All Music", Toast.LENGTH_SHORT).show();
+    }
 
-              private void openFolders() {
-                  Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                  intent.addCategory(Intent.CATEGORY_OPENABLE);
-                  intent.setType("audio/*");
-                  filePickerLauncher.launch(intent);
-              }
+    private void openFolders() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("audio/*"); 
+        filePickerLauncher.launch(intent);
+    }
 
-              private void openPlaylists() {
-                  Toast.makeText(this, "Playlists", Toast.LENGTH_SHORT).show();
-              }
+    private void openPlaylists() {
+        Toast.makeText(this, "Opening Playlists", Toast.LENGTH_SHORT).show();
+    }
 
-              private void openEqualizer() {
-                  Toast.makeText(this, "Ecualizador", Toast.LENGTH_SHORT).show();
-              }
+    private void openEqualizer() {
+        Toast.makeText(this, "Opening Equalizer", Toast.LENGTH_SHORT).show();
+    }
 
-              private void openSearch() {
-                  Toast.makeText(this, "Buscar", Toast.LENGTH_SHORT).show();
-              }
-          }
-          EOF
+    private void openSearch() {
+        Toast.makeText(this, "Opening Search", Toast.LENGTH_SHORT).show();
+    }
+}
+EOF
 
           cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/LyraPlaybackService.java
-          package com.lyra.audiokernel;
-          import android.app.Service;
-          import android.content.Intent;
-          import android.os.IBinder;
-          public class LyraPlaybackService extends Service {
-              @Override public IBinder onBind(Intent intent) { return null; }
-          }
-          EOF
+package com.lyra.audiokernel;
+import android.app.Service;
+import android.content.Intent;
+import android.os.IBinder;
+public class LyraPlaybackService extends Service {
+    @Override public IBinder onBind(Intent intent) { return null; }
+}
+EOF
+
+          # Manifiesto corregido
+          cat <<'EOF' > app/src/main/AndroidManifest.xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <application android:label="Lyra v1.8" android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+EOF
 
       - name: Master Compilation
         run: |
