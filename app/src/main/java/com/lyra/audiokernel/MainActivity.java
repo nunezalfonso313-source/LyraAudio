@@ -952,4 +952,4 @@ public class MainActivity extends AppCompatActivity {
         // Si abres buscador, ocultamos el EQ
         if (visibility == android.view.View.VISIBLE) findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE);
     }
-
+}
