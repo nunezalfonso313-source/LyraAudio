@@ -14,10 +14,7 @@ public class LyraVisualizer {
         void onError(String msg);
     }
 
-    public LyraVisualizer(VUMeterView left, VUMeterView right, SpectrumView spectrum) {
-        this.vuLeft = left;
-        this.vuRight = right;
-        this.spectrumView = spectrum;
+    
     }
 
     public void init(int audioSessionId, VisualizerReadyCallback callback) {
