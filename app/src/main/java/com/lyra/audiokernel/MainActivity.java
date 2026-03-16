@@ -64,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean serviceBound = false;
 
     private LyraVisualizer lyraVisualizer;
-    private Spectrum_View spectrumView;
-    private NixieDisplay_View nixieDisplay;
+    private Spectrum_View spectrum_View;
+    private NixieDisplay_View nixie_Display;
     private boolean visualizerReady = false;
 
     private ImageView album_art;
@@ -145,8 +145,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        spectrumView = findViewById(R.id.spectrum_view);
-        nixieDisplay = findViewById(R.id.nixie_display);
+        spectrum_View = findViewById(R.id.spectrum_view);
+        nixie_Display = findViewById(R.id.nixie_display);
 
         lyraVisualizer = new LyraVisualizer(spectrumView, nixieDisplay);
 
