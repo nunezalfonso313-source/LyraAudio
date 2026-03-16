@@ -958,18 +958,18 @@ public class MainActivity extends AppCompatActivity {
     // 4. ECUALIZADOR (Muestra/Oculta)
     private void openEqualizer() {
         android.view.View eq = findViewById(R.id.eq_panel);
-        int visibility = (eq.getVisibility() == android.view.View.VISIBLE){ ? android.view.View.GONE : android.view.View.VISIBLE;
+        int visibility = (eq.getVisibility() == android.view.View.VISIBLE) ? android.view.View.GONE : android.view.View.VISIBLE;
         eq.setVisibility(visibility);
         // Si abres EQ, ocultamos el buscador para que no se encimen
-        if (visibility == android.view.View.VISIBLE) findViewById(R.id.search_bar).setVisibility(android.view.View.GONE)
+        if (visibility == android.view.View.VISIBLE){ findViewById(R.id.search_bar).setVisibility(android.view.View.GONE);
     }
 
     // 5. BUSCADOR (Muestra/Oculta)
     private void openSearch() {
         android.view.View search = findViewById(R.id.search_bar);
-        int visibility = (search.getVisibility() == android.view.View.VISIBLE){ ? android.view.View.GONE : android.view.View.VISIBLE;
+        int visibility = (search.getVisibility() == android.view.View.VISIBLE) ? android.view.View.GONE : android.view.View.VISIBLE;
         search.setVisibility(visibility);
         // Si abres buscador, ocultamos el EQ
-        if (visibility == android.view.View.VISIBLE){ findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE)
+        if (visibility == android.view.View.VISIBLE){ findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE);
     }
 }
