@@ -64,25 +64,30 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
-            private final ActivityResultLauncher<Intent> filePickerLauncher = 
+                private final ActivityResultLauncher<Intent> filePickerLauncher = 
         registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
                 if (uri != null) {
-                    // 1. Pedimos permiso permanente para leer este archivo
+                    // 1. Permiso para leer el archivo siempre
                     getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     
-                    // 2. Le enviamos la canción al reproductor (Usando tu lyraService)
+                    // 2. ACTUALIZAR EL TÍTULO EN PANTALLA
+                    // Esto pone el nombre del archivo (ej: "cancion.mp3") en el TextView
+                    trackTitle.setText(uri.getLastPathSegment());
+                    trackArtist.setText("Carpeta Local"); // Opcional: para saber que viene de archivos
+                    
+                    // 3. ENVIAR AL REPRODUCTOR
                     if (lyraService != null && lyraService.getPlayer() != null) {
                         androidx.media3.common.MediaItem mediaItem = androidx.media3.common.MediaItem.fromUri(uri);
                         lyraService.getPlayer().setMediaItem(mediaItem);
                         lyraService.getPlayer().prepare();
                         lyraService.getPlayer().play();
-                        android.widget.Toast.makeText(this, "Reproduciendo: " + uri.getLastPathSegment(), android.widget.Toast.LENGTH_SHORT).show();
                     }
                 }
             }
         });
+
 
 
 
