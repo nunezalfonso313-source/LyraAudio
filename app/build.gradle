@@ -4,7 +4,6 @@ plugins {
 
 android {
     namespace 'com.lyra.audiokernel'
-    namespace 'com.lyra.audiokernel'
     compileSdk 34
 
     defaultConfig {
