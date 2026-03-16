@@ -169,6 +169,8 @@ public class MainActivity extends AppCompatActivity {
         try {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_main);
+            androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar);
+            setSupportActionBar(toolbar);
 
             spectrumView = findViewById(R.id.spectrum_view);
             nixieDisplay = findViewById(R.id.nixie_display);
