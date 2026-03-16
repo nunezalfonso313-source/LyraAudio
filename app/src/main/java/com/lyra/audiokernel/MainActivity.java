@@ -64,12 +64,12 @@ public class MainActivity extends AppCompatActivity {
     private boolean serviceBound = false;
 
     private LyraVisualizer lyraVisualizer;
-    private SpectrumView spectrumView;
-    private NixieDisplayView nixieDisplay;
+    private Spectrum_View spectrumView;
+    private NixieDisplay_View nixieDisplay;
     private boolean visualizerReady = false;
 
-    private ImageView albumArt;
-    private TextView trackTitle, trackArtist, trackAlbum, trackMeta,
+    private ImageView album_art;
+    private TextView track_Title, track_artist, trackAlbum, trackMeta,
                      trackNumber, timeCurrent, timeTotal, libraryLabel;
     private SeekBar seekBar;
     private ListView playlistView;
@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
 
         lyraVisualizer = new LyraVisualizer(spectrumView, nixieDisplay);
 
-        albumArt     = findViewById(R.id.album_art);
+        album_art     = findViewById(R.id.album_art);
         trackTitle   = findViewById(R.id.track_title);
         trackArtist  = findViewById(R.id.track_artist);
         trackAlbum   = findViewById(R.id.track_album);
