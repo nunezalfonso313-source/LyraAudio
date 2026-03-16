@@ -1,5 +1,7 @@
 package com.lyra.audiokernel;
 
+import android.view.Menu;
+import android.view.MenuItem;
 import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
