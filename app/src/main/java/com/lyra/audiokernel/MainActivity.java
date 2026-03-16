@@ -691,5 +691,27 @@ public boolean onOptionsItemSelected(MenuItem item) {
 
     return super.onOptionsItemSelected(item);
 }
+    private void openAllMusic() {
+        android.widget.Toast.makeText(this, "Toda la Música", android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+    private void openFolders() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("audio/*"); 
+        filePickerLauncher.launch(intent);
+    }
+
+    private void openPlaylists() {
+        android.widget.Toast.makeText(this, "Playlists", android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+    private void openEqualizer() {
+        android.widget.Toast.makeText(this, "Ecualizador", android.widget.Toast.LENGTH_SHORT).show();
+    }
+
+    private void openSearch() {
+        android.widget.Toast.makeText(this, "Buscador", android.widget.Toast.LENGTH_SHORT).show();
+    }
 
     }
