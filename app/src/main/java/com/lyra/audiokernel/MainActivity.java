@@ -64,15 +64,26 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
-        private final ActivityResultLauncher<Intent> filePickerLauncher = 
+            private final ActivityResultLauncher<Intent> filePickerLauncher = 
         registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
                 if (uri != null) {
-                    android.widget.Toast.makeText(this, "Cargado: " + uri.getLastPathSegment(), android.widget.Toast.LENGTH_LONG).show();
+                    // 1. Pedimos permiso permanente para leer este archivo
+                    getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    
+                    // 2. Le enviamos la canción al reproductor (Usando tu lyraService)
+                    if (lyraService != null && lyraService.getPlayer() != null) {
+                        androidx.media3.common.MediaItem mediaItem = androidx.media3.common.MediaItem.fromUri(uri);
+                        lyraService.getPlayer().setMediaItem(mediaItem);
+                        lyraService.getPlayer().prepare();
+                        lyraService.getPlayer().play();
+                        android.widget.Toast.makeText(this, "Reproduciendo: " + uri.getLastPathSegment(), android.widget.Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         });
+
 
 
     private MediaController mediaController;
