@@ -64,6 +64,16 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
+        private final ActivityResultLauncher<Intent> filePickerLauncher = 
+        registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                Uri uri = result.getData().getData();
+                if (uri != null) {
+                    android.widget.Toast.makeText(this, "Cargado: " + uri.getLastPathSegment(), android.widget.Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+
 
     private MediaController mediaController;
     private ListenableFuture<MediaController> controllerFuture;
