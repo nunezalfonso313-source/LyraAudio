@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_all_music"
+        android:title="TODA LA MUSICA" />
+    <item
+        android:id="@+id/menu_folders"
+        android:title="CARPETAS" />
+    <item
+        android:id="@+id/menu_playlists"
+        android:title="PLAYLIST" />
+    <item
+        android:id="@+id/menu_equalizer"
+        android:title="ECUALIZADOR" />
+    <item
+        android:id="@+id/menu_search"
+        android:title="BUSCAR" />
+</menu>
+
