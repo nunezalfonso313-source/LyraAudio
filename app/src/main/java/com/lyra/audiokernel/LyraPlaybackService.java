@@ -7,6 +7,7 @@ import android.os.IBinder;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.MediaSessionService;
+import androidx.media3.common.Player;
 
 public class LyraPlaybackService extends MediaSessionService {
     private MediaSession mediaSession;
