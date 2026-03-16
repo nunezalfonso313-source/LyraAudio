@@ -930,29 +930,29 @@ public class MainActivity extends AppCompatActivity {
     }
         // 1. TODA LA MÚSICA
     private void openAllMusic() {
-        findViewById(R.id.playlist_view).setVisibility(android.view.View.VISIBLE);
-        findViewById(R.id.pl_drawer).setVisibility(android.view.View.GONE);
-        findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE);
-        findViewById(R.id.search_bar).setVisibility(android.view.View.GONE);
-        ((android.widget.TextView)findViewById(R.id.library_label)).setText("TODA LA MÚSICA");
-        Toast.makeText(this, "Biblioteca completa", Toast.LENGTH_SHORT).show();
+        findViewById(R.id.playlist_view).setVisibility(android.view.View.VISIBLE)
+        findViewById(R.id.pl_drawer).setVisibility(android.view.View.GONE)
+        findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE)
+        findViewById(R.id.search_bar).setVisibility(android.view.View.GONE)
+        ((android.widget.TextView)findViewById(R.id.library_label)).setText("TODA LA MÚSICA")
+        Toast.makeText(this, "Biblioteca completa", Toast.LENGTH_SHORT).show()
     }
 
     // 2. CARPETAS (Selector de archivos)
     private void openFolders() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT)
         intent.setType("audio/*");
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        filePickerLauncher.launch(Intent.createChooser(intent, "Selecciona música"));
+        intent.addCategory(Intent.CATEGORY_OPENABLE)
+        filePickerLauncher.launch(Intent.createChooser(intent, "Selecciona música"))
     }
 
     // 3. PLAYLISTS
     private void openPlaylists() {
         // Esto abre el panel de Playlists que tienes al final del XML
-        findViewById(R.id.pl_drawer).setVisibility(android.view.View.VISIBLE);
-        findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE);
-        findViewById(R.id.search_bar).setVisibility(android.view.View.GONE);
-        Toast.makeText(this, "Tus Playlists", Toast.LENGTH_SHORT).show();
+        findViewById(R.id.pl_drawer).setVisibility(android.view.View.VISIBLE)
+        findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE)
+        findViewById(R.id.search_bar).setVisibility(android.view.View.GONE)
+        Toast.makeText(this, "Tus Playlists", Toast.LENGTH_SHORT).show()
     }
 
     // 4. ECUALIZADOR (Muestra/Oculta)
@@ -961,7 +961,7 @@ public class MainActivity extends AppCompatActivity {
         int visibility = (eq.getVisibility() == android.view.View.VISIBLE) ? android.view.View.GONE : android.view.View.VISIBLE;
         eq.setVisibility(visibility);
         // Si abres EQ, ocultamos el buscador para que no se encimen
-        if (visibility == android.view.View.VISIBLE) findViewById(R.id.search_bar).setVisibility(android.view.View.GONE);
+        if (visibility == android.view.View.VISIBLE) findViewById(R.id.search_bar).setVisibility(android.view.View.GONE)
     }
 
     // 5. BUSCADOR (Muestra/Oculta)
@@ -970,6 +970,6 @@ public class MainActivity extends AppCompatActivity {
         int visibility = (search.getVisibility() == android.view.View.VISIBLE) ? android.view.View.GONE : android.view.View.VISIBLE;
         search.setVisibility(visibility);
         // Si abres buscador, ocultamos el EQ
-        if (visibility == android.view.View.VISIBLE) findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE);
+        if (visibility == android.view.View.VISIBLE) findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE)
     }
 }
