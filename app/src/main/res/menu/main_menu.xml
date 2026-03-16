@@ -2,18 +2,23 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_all_music"
-        android:title="TODA LA MUSICA" />
+        android:title="TODA LA MUSICA" 
+        app:showAsAction="never" />
     <item
         android:id="@+id/menu_folders"
-        android:title="CARPETAS" />
+        android:title="CARPETAS" 
+        app:showAsAction="never" />
     <item
         android:id="@+id/menu_playlists"
-        android:title="PLAYLIST" />
+        android:title="PLAYLIST" 
+        app:showAsAction="never" />
     <item
         android:id="@+id/menu_equalizer"
-        android:title="ECUALIZADOR" />
+        android:title="ECUALIZADOR" 
+        app:showAsAction="never" />
     <item
         android:id="@+id/menu_search"
-        android:title="BUSCAR" />
+        android:title="BUSCAR" 
+        app:showAsAction="never" />
 </menu>
 
