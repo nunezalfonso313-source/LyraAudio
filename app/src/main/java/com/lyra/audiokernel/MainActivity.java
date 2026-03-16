@@ -79,6 +79,17 @@ public class MainActivity extends AppCompatActivity {
         scrollView.addView(errorTextView);
         setContentView(scrollView);
     }
+    private final ActivityResultLauncher<Intent> filePickerLauncher = 
+    registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+        if (result.getResultCode() == android.app.Activity.RESULT_OK && result.getData() != null) {
+            Uri uri = result.getData().getData();
+            if (uri != null) {
+                // Aquí puedes añadir la lógica para cargar el audio seleccionado
+                android.widget.Toast.makeText(this, "Archivo seleccionado correctamente", android.widget.Toast.LENGTH_SHORT).show();
+            }
+        }
+    });
+
 
     private MediaController mediaController;
     private ListenableFuture<MediaController> controllerFuture;
