@@ -202,6 +202,59 @@ public class MainActivity extends AppCompatActivity {
                     int db = level / 100;
                     eqVals[band].setText((db >= 0 ? "+" : "") + db + "dB");
                 }
+                public class MainActivity extends AppCompatActivity {
+
+    // muchas líneas de tu código (player, UI, etc.)
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // tu código existente
+    }
+
+    // 🔹 AQUÍ agregas esto
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id = item.getItemId();
+
+        if (id == R.id.menu_all_music) {
+            Toast.makeText(this,"Toda la música",Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_folders) {
+            Toast.makeText(this,"Carpetas",Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_playlists) {
+            Toast.makeText(this,"Playlists",Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_equalizer) {
+            Toast.makeText(this,"Ecualizador",Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_search) {
+            Toast.makeText(this,"Buscar",Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+                }
                 @Override public void onStartTrackingTouch(SeekBar sb) {}
                 @Override public void onStopTrackingTouch(SeekBar sb) {}
             });
