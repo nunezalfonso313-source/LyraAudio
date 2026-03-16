@@ -34,6 +34,9 @@ public class LyraPlaybackService extends MediaSessionService {
             equalizer.setEnabled(true);
         } catch (Exception ignored) {}
     }
+public Player getPlayer() {
+    return this.player;
+}
 
     public int getAudioSessionId() { return player != null ? player.getAudioSessionId() : 0; }
     public short getNumBands() { return equalizer != null ? equalizer.getNumberOfBands() : 5; }
