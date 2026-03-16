@@ -19,7 +19,7 @@
             android:background="#111111">
 
             <ImageView
-                android:id="@+id/albumArt"
+                android:id="@+id/album_art"
                 android:layout_width="260dp"
                 android:layout_height="260dp"
                 android:scaleType="centerCrop"/>
