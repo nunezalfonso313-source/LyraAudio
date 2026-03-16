@@ -1,4 +1,4 @@
-name: Build Lyra KERNEL v1.8 Master Fixed
+name: Build Lyra KERNEL v1.8 Master Clean
 on:
   workflow_dispatch:
 
@@ -15,9 +15,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: AEGIS - Inject Master Logic and UI
+      - name: AEGIS - Inyección de Lógica y UI Sincronizada
         run: |
-          # Creación de estructura sin borrado previo
+          # Creación de estructura de directorios
           mkdir -p app/src/main/java/com/lyra/audiokernel
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/menu
@@ -53,8 +53,8 @@ jobs:
                   applicationId 'com.lyra.audiokernel'
                   minSdk 24
                   targetSdk 34
-                  versionCode 17
-                  versionName '1.8-Master-Fixed'
+                  versionCode 19
+                  versionName '1.8-Master-Clean'
               }
               compileOptions {
                   sourceCompatibility JavaVersion.VERSION_17
@@ -69,7 +69,7 @@ jobs:
           }
           EOF
 
-          # UI: Menú de tres puntos (Overflow Menu)
+          # UI: Menú de tres puntos (Sin botones en pantalla principal)
           cat <<'EOF' > app/src/main/res/menu/main_menu.xml
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
@@ -81,21 +81,21 @@ jobs:
 </menu>
 EOF
 
-          # UI: Layout con Portada Expandida y sin VU Meters
+          # UI: Layout con Portada Ampliada (Foco en Masterpiece Optics)
           cat <<'EOF' > app/src/main/res/layout/activity_main.xml
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="match_parent" android:background="#0A0A0A">
     <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical">
         
-        <ImageView android:id="@+id/album_art" android:layout_width="match_parent" android:layout_height="400dp" 
+        <ImageView android:id="@+id/album_art" android:layout_width="match_parent" android:layout_height="420dp" 
             android:scaleType="centerCrop" android:background="#111111" />
 
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
             <TextView android:id="@+id/track_title" android:layout_width="match_parent" android:layout_height="wrap_content" 
-                android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold" android:text="Lyra KERNEL Ready" />
+                android:textColor="#FFFFFF" android:textSize="22sp" android:textStyle="bold" android:text="Lyra v1.8" />
             <TextView android:id="@+id/track_artist" android:layout_width="match_parent" android:layout_height="wrap_content" 
-                android:textColor="#00BFFF" android:textSize="16sp" android:text="Use menu to select music" />
+                android:textColor="#00BFFF" android:textSize="16sp" android:text="Kernel Master" />
         </LinearLayout>
 
         <SeekBar android:id="@+id/seek_bar" android:layout_width="match_parent" android:layout_height="wrap_content" 
@@ -107,7 +107,7 @@ EOF
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 EOF
 
-          # LÓGICA: MainActivity con Imports y Métodos faltantes (Corrección de los 16 errores)
+          # LÓGICA: MainActivity (ELIMINACIÓN DE REFERENCIAS MUERTAS A VU METERS)
           cat <<'EOF' > app/src/main/java/com/lyra/audiokernel/MainActivity.java
 package com.lyra.audiokernel;
 
@@ -126,13 +126,13 @@ public class MainActivity extends AppCompatActivity {
     
     private ImageView albumArt;
 
-    // Lógica para abrir el selector de archivos nativo de Android
+    // Lógica para CARPETAS (File Picker Nativo)
     private final ActivityResultLauncher<Intent> filePickerLauncher = 
         registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
                 if (uri != null) {
-                    Toast.makeText(this, "File selected: " + uri.getLastPathSegment(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, "Audio cargado: " + uri.getLastPathSegment(), Toast.LENGTH_LONG).show();
                 }
             }
         });
@@ -141,8 +141,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        
         albumArt = findViewById(R.id.album_art);
-        // Sincronización completa: Se eliminaron referencias a VU_LEFT y VU_RIGHT
+        // SE HAN ELIMINADO LAS LÍNEAS DE VU_LEFT Y VU_RIGHT PARA EVITAR FALLOS DE COMPILACIÓN
     }
 
     @Override
@@ -162,9 +163,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private void openAllMusic() {
-        Toast.makeText(this, "Loading All Music", Toast.LENGTH_SHORT).show();
-    }
+    private void openAllMusic() { Toast.makeText(this, "Cargando Biblioteca", Toast.LENGTH_SHORT).show(); }
 
     private void openFolders() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -173,17 +172,9 @@ public class MainActivity extends AppCompatActivity {
         filePickerLauncher.launch(intent);
     }
 
-    private void openPlaylists() {
-        Toast.makeText(this, "Opening Playlists", Toast.LENGTH_SHORT).show();
-    }
-
-    private void openEqualizer() {
-        Toast.makeText(this, "Opening Equalizer", Toast.LENGTH_SHORT).show();
-    }
-
-    private void openSearch() {
-        Toast.makeText(this, "Opening Search", Toast.LENGTH_SHORT).show();
-    }
+    private void openPlaylists() { Toast.makeText(this, "Playlists", Toast.LENGTH_SHORT).show(); }
+    private void openEqualizer() { Toast.makeText(this, "Ecualizador", Toast.LENGTH_SHORT).show(); }
+    private void openSearch() { Toast.makeText(this, "Búsqueda", Toast.LENGTH_SHORT).show(); }
 }
 EOF
 
@@ -197,7 +188,6 @@ public class LyraPlaybackService extends Service {
 }
 EOF
 
-          # Manifiesto corregido
           cat <<'EOF' > app/src/main/AndroidManifest.xml
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -222,5 +212,5 @@ EOF
       - name: Deliver Master APK
         uses: actions/upload-artifact@v4
         with:
-          name: Lyra-v1.8-Master-Build
+          name: Lyra-v1.8-Master-Clean
           path: app/build/outputs/apk/debug/app-debug.apk
