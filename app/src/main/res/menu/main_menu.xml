@@ -1,25 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto">
+        <item
+        android:id="@+id/menu_search"
+        android:title="Buscador"
+        app:showAsAction="ifRoom" />
+
     <item
         android:id="@+id/menu_all_music"
-        android:title="TODA LA MUSICA"/>
-        
+        android:title="Toda la Música"
+        app:showAsAction="never" />
+
     <item
         android:id="@+id/menu_folders"
-        android:title="CARPETAS"/>
-        
+        android:title="CARPETAS"
+        app:showAsAction="never" />
+
     <item
         android:id="@+id/menu_playlists"
-        android:title="PLAYLIST"/>
-        
+        android:title="Playlists"
+        app:showAsAction="never" />
+
     <item
         android:id="@+id/menu_equalizer"
-        android:title="ECUALIZADOR"/>
-        
-    <item
-        android:id="@+id/menu_search"
-        android:title="BUSCAR"/>
+        android:title="Ecualizador"
+        app:showAsAction="never" />
+
         
 </menu>
 
