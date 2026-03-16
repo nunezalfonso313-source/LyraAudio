@@ -81,7 +81,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean serviceBound = false;
 
     private LyraVisualizer lyraVisualizer;
-    private VUMeterView vuLeft, vuRight;
     private SpectrumView spectrumView;
     private NixieDisplayView nixieDisplay;
     private boolean visualizerReady = false;
