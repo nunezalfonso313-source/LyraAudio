@@ -917,7 +917,19 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             showErrorOnScreen(e);
         }
+   @Override
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
     }
+
+    @Override
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
+
+    
+          try {
+             int id = item.getItemId();
+   }
 
         // 1. TODA LA MÚSICA
     private void openAllMusic() {
