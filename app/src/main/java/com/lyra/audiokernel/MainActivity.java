@@ -929,7 +929,7 @@ public class MainActivity extends AppCompatActivity {
     
           try {
              int id = item.getItemId();
-   }
+   
 
         // 1. TODA LA MÚSICA
     private void openAllMusic() {
