@@ -64,7 +64,16 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
-                private final ActivityResultLauncher<Intent> filePickerLauncher = 
+
+    // 1. PRIMERO DECLARAMOS LAS VARIABLES (Para que el Launcher las pueda ver)
+    private TextView trackTitle;
+    private TextView trackArtist;
+    private LyraPlaybackService lyraService; 
+    private ImageView albumArt;
+    // ... (si tienes más variables como btnPlay, etc., ponlas aquí arriba también)
+
+    // 2. LUEGO PONEMOS EL LAUNCHER (Ahora ya sabe qué es trackTitle y lyraService)
+    private final ActivityResultLauncher<Intent> filePickerLauncher = 
         registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
@@ -73,9 +82,8 @@ public class MainActivity extends AppCompatActivity {
                     getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     
                     // 2. ACTUALIZAR EL TÍTULO EN PANTALLA
-                    // Esto pone el nombre del archivo (ej: "cancion.mp3") en el TextView
                     trackTitle.setText(uri.getLastPathSegment());
-                    trackArtist.setText("Carpeta Local"); // Opcional: para saber que viene de archivos
+                    trackArtist.setText("Carpeta Local"); 
                     
                     // 3. ENVIAR AL REPRODUCTOR
                     if (lyraService != null && lyraService.getPlayer() != null) {
@@ -87,6 +95,27 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        
+        try {
+            setContentView(R.layout.activity_main);
+
+            // 3. AQUÍ LAS INICIALIZAS (El puente con el XML)
+            trackTitle = findViewById(R.id.track_title);
+            trackArtist = findViewById(R.id.track_artist);
+            albumArt = findViewById(R.id.albumArt); 
+            
+            // ... (el resto de tus findViewById)
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
 
 
 
