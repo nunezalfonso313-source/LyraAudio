@@ -927,10 +927,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
 
     
-          try {
-             int id = item.getItemId();
-   
-
+    }
         // 1. TODA LA MÚSICA
     private void openAllMusic() {
         findViewById(R.id.playlist_view).setVisibility(android.view.View.VISIBLE);
