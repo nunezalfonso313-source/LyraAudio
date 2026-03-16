@@ -3,22 +3,22 @@
     <item
         android:id="@+id/menu_all_music"
         android:title="TODA LA MUSICA" 
-        app:showAsAction="never" />
+        app:showAsAction="never"/>
     <item
         android:id="@+id/menu_folders"
         android:title="CARPETAS" 
-        app:showAsAction="never" />
+        app:showAsAction="never"/>
     <item
         android:id="@+id/menu_playlists"
         android:title="PLAYLIST" 
-        app:showAsAction="never" />
+        app:showAsAction="never"/>
     <item
         android:id="@+id/menu_equalizer"
         android:title="ECUALIZADOR" 
-        app:showAsAction="never" />
+        app:showAsAction="never"/>
     <item
         android:id="@+id/menu_search"
         android:title="BUSCAR" 
-        app:showAsAction="never" />
+        app:showAsAction="never"/>
 </menu>
 
