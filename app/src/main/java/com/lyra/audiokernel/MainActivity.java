@@ -148,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
         spectrumView = findViewById(R.id.spectrum_view);
         nixieDisplay = findViewById(R.id.nixie_display);
 
-
+        lyraVisualizer = new LyraVisualizer(spectrumView, nixieDisplay);
 
         albumArt     = findViewById(R.id.album_art);
         trackTitle   = findViewById(R.id.track_title);
