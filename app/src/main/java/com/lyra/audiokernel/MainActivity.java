@@ -186,10 +186,7 @@ public class MainActivity extends AppCompatActivity {
             nixieDisplay = findViewById(R.id.nixie_display);
 
             // Protección adicional por si alguna vista es null
-            if (vuLeft != null) vuLeft.setChannelLabel("L");
-            if (vuRight != null) vuRight.setChannelLabel("R");
-
-            lyraVisualizer = new LyraVisualizer(vuLeft, vuRight, spectrumView);
+            lyraVisualizer = new LyraVisualizer(null, null, spectrumView, nixieDisplay);
 
             albumArt     = findViewById(R.id.album_art);
             trackTitle   = findViewById(R.id.track_title);
