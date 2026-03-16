@@ -186,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
             nixieDisplay = findViewById(R.id.nixie_display);
 
             // Protección adicional por si alguna vista es null
-            lyraVisualizer = new LyraVisualizer(null, null, spectrumView, nixieDisplay);
+            lyraVisualizer = new LyraVisualizer(spectrumView, nixieDisplay);
 
             albumArt     = findViewById(R.id.album_art);
             trackTitle   = findViewById(R.id.track_title);
