@@ -174,14 +174,13 @@ public class MainActivity extends AppCompatActivity {
         });
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        
-        // === PROTECCIÓN CONTRA CRASHES ===
-        try {
-            setContentView(R.layout.activity_main);
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    // ...
+    try {
+        setContentView(R.layout.activity_main);
 
-            
+ 
             spectrumView = findViewById(R.id.spectrum_view);
             nixieDisplay = findViewById(R.id.nixie_display);
 
