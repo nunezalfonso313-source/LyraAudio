@@ -166,8 +166,7 @@ public class MainActivity extends AppCompatActivity {
         try {
             setContentView(R.layout.activity_main);
 
-            vuLeft       = findViewById(R.id.vu_left);
-            vuRight      = findViewById(R.id.vu_right);
+            
             spectrumView = findViewById(R.id.spectrum_view);
             nixieDisplay = findViewById(R.id.nixie_display);
 
