@@ -907,22 +907,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
+    protected void onDestroy(){
         try {
             super.onDestroy();
             handler.removeCallbacks(updateProgress);
             lyraVisualizer.release();
             if (serviceBound) unbindService(eqConnection);
             MediaController.releaseFuture(controllerFuture);
-        } catch (Exception e) {
+        } catch (Exception e){
             showErrorOnScreen(e);
+        }     
         }
    @Override
     public boolean onCreateOptionsMenu(android.view.Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
-    }
-
+    }  
+}
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
 
