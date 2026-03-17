@@ -927,25 +927,35 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
 
-    
     int id = item.getItemId();
 
         if (id == R.id.menu_all_music) {
-    startActivity(new Intent(this, AllMusicActivity.class));
-    return true;
-} else if (id == R.id.menu_folders) {
-    startActivity(new Intent(this, FoldersActivity.class));
-    return true;
-} else if (id == R.id.menu_playlists) {
-    startActivity(new Intent(this, PlaylistsActivity.class));
-    return true;
-} else if (id == R.id.menu_equalizer) {
-    startActivity(new Intent(this, EqualizerActivity.class));
-    return true;
-} else if (id == R.id.menu_search) {
-    startActivity(new Intent(this, SearchActivity.class));
-    return true;
- }
+            android.widget.Toast.makeText(this,"Toda la música",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_folders) {
+            android.widget.Toast.makeText(this,"Carpetas",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_playlists) {
+            android.widget.Toast.makeText(this,"Playlists",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_equalizer) {
+            android.widget.Toast.makeText(this,"Ecualizador",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_search) {
+            android.widget.Toast.makeText(this,"Buscar",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
+
 }
+    
