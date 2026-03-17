@@ -946,3 +946,4 @@ public class MainActivity extends AppCompatActivity {
     startActivity(new Intent(this, SearchActivity.class));
     return true;
         }
+}
