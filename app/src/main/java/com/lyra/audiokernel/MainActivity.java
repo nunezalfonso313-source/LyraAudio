@@ -923,7 +923,7 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.main_menu, menu);
         return true;
     }  
-}
+
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
 
