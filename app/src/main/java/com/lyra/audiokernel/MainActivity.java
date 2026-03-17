@@ -928,49 +928,34 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
 
     
-    }
-        // 1. TODA LA MÚSICA
-    private void openAllMusic() {
-        findViewById(R.id.playlist_view).setVisibility(android.view.View.VISIBLE);
-        findViewById(R.id.pl_drawer).setVisibility(android.view.View.GONE);
-        findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE);
-        findViewById(R.id.search_bar).setVisibility(android.view.View.GONE);
-        ((android.widget.TextView)findViewById(R.id.library_label)).setText("TODA LA MÚSICA");
-        Toast.makeText(this, "Biblioteca completa", Toast.LENGTH_SHORT).show();
+    int id = item.getItemId();
+
+        if (id == R.id.menu_all_music) {
+            android.widget.Toast.makeText(this,"Toda la m煤sica",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_folders) {
+            android.widget.Toast.makeText(this,"Carpetas",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_playlists) {
+            android.widget.Toast.makeText(this,"Playlists",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_equalizer) {
+            android.widget.Toast.makeText(this,"Ecualizador",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (id == R.id.menu_search) {
+            android.widget.Toast.makeText(this,"Buscar",android.widget.Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
     }
 
-    // 2. CARPETAS (Selector de archivos)
-    private void openFolders() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.setType("audio/*");
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        filePickerLauncher.launch(Intent.createChooser(intent, "Selecciona música"));
-    }
-
-    // 3. PLAYLISTS
-    private void openPlaylists() {
-        // Esto abre el panel de Playlists que tienes al final del XML
-        findViewById(R.id.pl_drawer).setVisibility(android.view.View.VISIBLE);
-        findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE);
-        findViewById(R.id.search_bar).setVisibility(android.view.View.GONE);
-        Toast.makeText(this, "Tus Playlists", Toast.LENGTH_SHORT).show();
-    }
-
-    // 4. ECUALIZADOR (Muestra/Oculta)
-    private void openEqualizer() {
-        android.view.View eq = findViewById(R.id.eq_panel);
-        int visibility = (eq.getVisibility() == android.view.View.VISIBLE) ? android.view.View.GONE : android.view.View.VISIBLE;
-        eq.setVisibility(visibility);
-        // Si abres EQ, ocultamos el buscador para que no se encimen
-        if (visibility == android.view.View.VISIBLE){ findViewById(R.id.search_bar).setVisibility(android.view.View.GONE);
-    }
-
-    // 5. BUSCADOR (Muestra/Oculta)
-    private void openSearch() {
-        android.view.View search = findViewById(R.id.search_bar);
-        int visibility = (search.getVisibility() == android.view.View.VISIBLE) ? android.view.View.GONE : android.view.View.VISIBLE;
-        search.setVisibility(visibility);
-        // Si abres buscador, ocultamos el EQ
-        if (visibility == android.view.View.VISIBLE){ findViewById(R.id.eq_panel).setVisibility(android.view.View.GONE);
-    }
 }
