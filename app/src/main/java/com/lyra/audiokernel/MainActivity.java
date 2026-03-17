@@ -945,5 +945,7 @@ public class MainActivity extends AppCompatActivity {
 } else if (id == R.id.menu_search) {
     startActivity(new Intent(this, SearchActivity.class));
     return true;
-        }
+ }
+        return super.onOptionsItemSelected(item);
+    }
 }
