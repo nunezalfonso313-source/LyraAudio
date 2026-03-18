@@ -342,16 +342,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
     </LinearLayout>
+     
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
-+id/search_input"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:hint="Buscar..."
-                android:background="#1A1A1A"
-                android:textColor="#FFFFFF"
-                android:paddingStart="8dp"/>
 
             <Button
                 android:id="@+id/btn_search_clear"
@@ -458,62 +450,5 @@
                 android:textColor="#FFFFFF"
                 android:paddingStart="8dp"/>
 
-            <Button
-                android:id="@+id/btn_pl_save"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="OK"
-                android:backgroundTint="#00FF00"
-                android:textColor="#000000"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_pl_new"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="+ NUEVA PLAYLIST"
-                android:backgroundTint="#00FF00"
-                android:textColor="#000000"/>
-
-            <Button
-                android:id="@+id/btn_pl_close"
-                android:layout_width="48dp"
-                android:layout_height="wrap_content"
-                android:text="✕"
-                android:background="@android:color/transparent"
-                android:textColor="#AAAAAA"/>
-        </LinearLayout>
-
-        <ListView
-            android:id="@+id/pl_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-    </LinearLayout>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
-     android:text="+ NUEVA PLAYLIST"
-                android:backgroundTint="#00FF00"
-                android:textColor="#000000"/>
-
-            <Button
-                android:id="@+id/btn_pl_close"
-                android:layout_width="48dp"
-                android:layout_height="wrap_content"
-                android:text="✕"
-                android:background="@android:color/transparent"
-                android:textColor="#AAAAAA"/>
-        </LinearLayout>
-
-        <ListView
-            android:id="@+id/pl_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-    </LinearLayout>
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+   </androidx.coordinatorlayout.widget.CoordinatorLayout>
+     
