@@ -10,8 +10,9 @@
 
     <application
         android:allowBackup="true"
-        android:label="Lyra Player"
-        android:theme="@style/Theme.AppCompat.NoActionBar">
+        android:label="OMEGA DAC"
+        android:theme="@style/Theme.AppCompat.NoActionBar"
+        android:icon="@mipmap/ic_launcher">
 
         <activity
             android:name=".MainActivity"
