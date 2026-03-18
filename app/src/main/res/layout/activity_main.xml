@@ -172,6 +172,22 @@
                 android:background="@android:color/transparent"
                 android:textColor="#CCCCCC"/>
 
+            <Button
+            android:id="@+id/btn_shuffle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="gone"
+            android:background="@android:color/transparent"/>
+
+        <Button
+            android:id="@+id/btn_repeat"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:visibility="gone"
+            android:background="@android:color/transparent"/>
+
         </LinearLayout>
 
         <!-- Spectrum -->
