@@ -14,11 +14,8 @@ public class TrackInfo {
     public Bitmap albumArt;
     public Uri uri;
     public String folder;
-    
 
-    // Constructor con 8 parámetros (el que usa MainActivity)
-    public TrackInfo(MediaItem mediaItem, String title, String artist, String album,
-                     String meta, String duration, Bitmap albumArt, Uri uri) {
+    public TrackInfo(MediaItem mediaItem, String title, String artist, String album, String meta, String duration, Bitmap albumArt, Uri uri, String folder) {
         this.mediaItem = mediaItem;
         this.title = title;
         this.artist = artist;
@@ -30,9 +27,7 @@ public class TrackInfo {
         this.folder = folder;
     }
 
-    // (Opcional) Constructor con 7 parámetros por si acaso
-    public TrackInfo(MediaItem mediaItem, String title, String artist, String album,
-                     String meta, String duration, Uri uri) {
-        this(mediaItem, title, artist, album, meta, duration, null, uri);
+    public TrackInfo(MediaItem mediaItem, String title, String artist, String album, String meta, String duration, Uri uri) {
+        this(mediaItem, title, artist, album, meta, duration, null, uri, null);
     }
 }
