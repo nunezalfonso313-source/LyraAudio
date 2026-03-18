@@ -21,60 +21,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Botones de control -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <Button
-                android:id="@+id/btn_shuffle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="⇀"
-                android:background="@android:color/transparent"
-                android:textColor="#555555"/>
-
-            <Button
-                android:id="@+id/btn_prev"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="⏮"
-                android:background="@android:color/transparent"
-                android:textColor="#CCCCCC"/>
-
-            <Button
-                android:id="@+id/btn_play"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1.2"
-                android:text="▶"
-                android:textColor="#00FF00"
-                android:background="@android:color/transparent"
-                android:textSize="22sp"/>
-
-            <Button
-                android:id="@+id/btn_next"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="⏭"
-                android:background="@android:color/transparent"
-                android:textColor="#CCCCCC"/>
-
-            <Button
-                android:id="@+id/btn_repeat"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="↺"
-                android:background="@android:color/transparent"
-                android:textColor="#555555"/>
-        </LinearLayout>
-
+    
         <!-- Cabecera -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -189,6 +136,60 @@
                 android:gravity="end"
                 android:textColor="#00FF00"
                 android:textSize="11sp"/>
+        </LinearLayout>
+
+        <!-- Botones de control -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <Button
+                android:id="@+id/btn_shuffle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⇀"
+                android:background="@android:color/transparent"
+                android:textColor="#555555"/>
+
+            <Button
+                android:id="@+id/btn_prev"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⏮"
+                android:background="@android:color/transparent"
+                android:textColor="#CCCCCC"/>
+
+            <Button
+                android:id="@+id/btn_play"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.2"
+                android:text="▶"
+                android:textColor="#00FF00"
+                android:background="@android:color/transparent"
+                android:textSize="22sp"/>
+
+            <Button
+                android:id="@+id/btn_next"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⏭"
+                android:background="@android:color/transparent"
+                android:textColor="#CCCCCC"/>
+
+            <Button
+                android:id="@+id/btn_repeat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="↺"
+                android:background="@android:color/transparent"
+                android:textColor="#555555"/>
         </LinearLayout>
 
         <!-- Spectrum -->
