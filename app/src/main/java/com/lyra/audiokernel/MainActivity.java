@@ -935,8 +935,30 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (id == R.id.menu_folders) {
-            android.widget.Toast.makeText(this,"Carpetas",android.widget.Toast.LENGTH_SHORT).show();
-            return true;
+    java.util.Set<String> folderSet = new java.util.LinkedHashSet<>();
+    for (TrackInfo t : allTracks) {
+        if (t.uri != null) {
+            java.io.File f = new java.io.File(t.uri.getPath());
+            folderSet.add(f.getParent() != null ? f.getParent() : "Raíz");
+        }
+    }
+    String[] folders = folderSet.toArray(new String[0]);
+    new android.app.AlertDialog.Builder(this)
+        .setTitle("Carpetas")
+        .setItems(folders, (dialog, which) -> {
+            String selected = folders[which];
+            displayedTracks.clear();
+            for (TrackInfo t : allTracks) {
+                if (t.uri != null) {
+                    java.io.File f = new java.io.File(t.uri.getPath());
+                    String parent = f.getParent() != null ? f.getParent() : "Raíz";
+                    if (parent.equals(selected)) displayedTracks.add(t);
+                }
+            }
+            trackAdapter.notifyDataSetChanged();
+        })
+        .show();
+    return true;
         }
 
         if (id == R.id.menu_playlists) {
