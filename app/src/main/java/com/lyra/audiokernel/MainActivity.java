@@ -955,7 +955,7 @@ public class MainActivity extends AppCompatActivity {
                     if (parent.equals(selected)) displayedTracks.add(t);
                 }
             }
-            trackAdapter.notifyDataSetChanged();
+            adapter.notifyDataSetChanged();
         })
         .show();
     return true;
