@@ -13,6 +13,8 @@ public class TrackInfo {
     public String duration;
     public Bitmap albumArt;
     public Uri uri;
+    public String folder;
+    
 
     // Constructor con 8 parámetros (el que usa MainActivity)
     public TrackInfo(MediaItem mediaItem, String title, String artist, String album,
@@ -25,6 +27,7 @@ public class TrackInfo {
         this.duration = duration;
         this.albumArt = albumArt;
         this.uri = uri;
+        this.folder = folder;
     }
 
     // (Opcional) Constructor con 7 parámetros por si acaso
