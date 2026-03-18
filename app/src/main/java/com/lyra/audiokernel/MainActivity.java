@@ -937,27 +937,24 @@ allTracks.add(new TrackInfo(MediaItem.fromUri(uri), tit, art, alb, meta, formatT
         }
 
         if (id == R.id.menu_folders) {
-    java.util.Set<String> folderSet = new java.util.LinkedHashSet<>();
-    for (TrackInfo t : allTracks) {
-        folderSet.add(t.folder != null ? t.folder : "Raíz");
-        }
-    }
-    String[] folders = folderSet.toArray(new String[0]);
-    new android.app.AlertDialog.Builder(this)
-        .setTitle("Carpetas")
-        .setItems(folders, (dialog, which) -> {
-            String selected = folders[which];
-            displayedTracks.clear();
+            java.util.Set<String> folderSet = new java.util.LinkedHashSet<>();
             for (TrackInfo t : allTracks) {
-                if (t.uri != null) {
-                    String parent = t.folder != null ? t.folder : "Raíz";
-                    if (parent.equals(selected)) displayedTracks.add(t);
-                }
+                folderSet.add(t.folder != null ? t.folder : "Raíz");
             }
-            adapter.notifyDataSetChanged();
-        })
-        .show();
-    return true;
+            String[] folders = folderSet.toArray(new String[0]);
+            new android.app.AlertDialog.Builder(this)
+                .setTitle("Carpetas")
+                .setItems(folders, (dialog, which) -> {
+                    String selected = folders[which];
+                    displayedTracks.clear();
+                    for (TrackInfo t : allTracks) {
+                        String parent = t.folder != null ? t.folder : "Raíz";
+                        if (parent.equals(selected)) displayedTracks.add(t);
+                    }
+                    adapter.notifyDataSetChanged();
+                })
+                .show();
+            return true;
         }
 
         if (id == R.id.menu_playlists) {
