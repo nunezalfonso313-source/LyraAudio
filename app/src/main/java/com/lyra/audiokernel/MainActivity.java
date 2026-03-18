@@ -939,9 +939,7 @@ allTracks.add(new TrackInfo(MediaItem.fromUri(uri), tit, art, alb, meta, formatT
         if (id == R.id.menu_folders) {
     java.util.Set<String> folderSet = new java.util.LinkedHashSet<>();
     for (TrackInfo t : allTracks) {
-        if (t.uri != null) {
-            java.io.File f = new java.io.File(t.uri.getPath());
-            folderSet.add(f.getParent() != null ? f.getParent() : "Raíz");
+        folderSet.add(t.folder != null ? t.folder : "Raíz");
         }
     }
     String[] folders = folderSet.toArray(new String[0]);
@@ -952,8 +950,7 @@ allTracks.add(new TrackInfo(MediaItem.fromUri(uri), tit, art, alb, meta, formatT
             displayedTracks.clear();
             for (TrackInfo t : allTracks) {
                 if (t.uri != null) {
-                    java.io.File f = new java.io.File(t.uri.getPath());
-                    String parent = f.getParent() != null ? f.getParent() : "Raíz";
+                    String parent = t.folder != null ? t.folder : "Raíz";
                     if (parent.equals(selected)) displayedTracks.add(t);
                 }
             }
