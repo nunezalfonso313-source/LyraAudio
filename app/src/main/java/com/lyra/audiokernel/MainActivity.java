@@ -766,7 +766,7 @@ public class MainActivity extends AppCompatActivity {
                         MediaStore.Audio.Media._ID, MediaStore.Audio.Media.TITLE,
                         MediaStore.Audio.Media.ARTIST, MediaStore.Audio.Media.ALBUM,
                         MediaStore.Audio.Media.DURATION, MediaStore.Audio.Media.SIZE,
-                        MediaStore.Audio.Media.MIME_TYPE
+                        MediaStore.Audio.Media.MIME_TYPE, MediaStore.Audio.Media.RELATIVE_PATH
                     };
                     try (Cursor cursor = getContentResolver().query(collection, projection,
                             MediaStore.Audio.Media.IS_MUSIC + " != 0", null, null)) {
