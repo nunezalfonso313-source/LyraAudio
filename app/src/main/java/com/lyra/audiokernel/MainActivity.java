@@ -782,7 +782,9 @@ public class MainActivity extends AppCompatActivity {
                                 String ext  = mime != null ? mime.substring(mime.lastIndexOf("/") + 1).toUpperCase() : "AUDIO";
                                 String meta = ext + " | " + String.format(Locale.US, "%.1f MB", sizeKb / 1024.0);
                                 Uri uri = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, String.valueOf(id));
-                                allTracks.add(new TrackInfo(MediaItem.fromUri(uri), tit, art, alb, meta, formatTime(durMs), null, uri));
+                                String relPath = cursor.getString(7);
+String folder = (relPath != null && !relPath.isEmpty()) ? relPath.replaceAll("/$", "") : "Raíz";
+allTracks.add(new TrackInfo(MediaItem.fromUri(uri), tit, art, alb, meta, formatTime(durMs), null, uri, folder));
                             }
                         }
                     }
