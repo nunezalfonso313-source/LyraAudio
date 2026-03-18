@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -14,14 +13,13 @@
         android:background="#111111"
         app:title="LyraAudio"
         app:titleTextColor="#FFFFFF"
-       app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" /> 
+        app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"/>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
-        <LinearLayout>
-            
+
         <!-- Cabecera -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -78,7 +76,7 @@
                     android:textColor="#00FF00"
                     android:textSize="11sp"/>
             </LinearLayout>
-        
+
         </LinearLayout>
 
         <!-- Nixie -->
@@ -138,13 +136,21 @@
                 android:textSize="11sp"/>
         </LinearLayout>
 
-<!-- Botones de control -->
+        <!-- Botones de control -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
+            <Button
+                android:id="@+id/btn_shuffle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⇀"
+                android:background="@android:color/transparent"
+                android:textColor="#555555"/>
 
             <Button
                 android:id="@+id/btn_prev"
@@ -173,93 +179,18 @@
                 android:text="⏭"
                 android:background="@android:color/transparent"
                 android:textColor="#CCCCCC"/>
-        </LinearLayout>
-
-        <!-- Spectrum -->
-        <com.lyra.audiokernel.SpectrumView
-            android:id="@+id/spectrum_view"
-            android:layout_width="match_parent"
-            android:layout_height="110dp"
-            android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp"
-            android:layout_marginBottom="4dp"/>
-        <LinearLayout
-            android:id="@+id/search_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:padding="8dp">
-
-            <EditText
-                android:id="@+id/search_input"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:hint="Buscar..."
-                android:background="#1A1A1A"
-                android:textColor="#FFFFFF"
-                android:paddingStart="8dp"/>
 
             <Button
-                android:id="@+id/btn_search_clear"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:text="✕"
+                android:id="@+id/btn_repeat"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="↺"
                 android:background="@android:color/transparent"
-                android:textColor="#AAAAAA"/>
-                
-            <Button
-                android:id="@+id/btn_eq"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="EQ"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_sort"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="AZ ARTISTA"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_search"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="BUSCAR"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_playlists"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="PL"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
+                android:textColor="#555555"/>
         </LinearLayout>
 
-        <!-- Playlist -->
-        <TextView
-            android:id="@+id/library_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="LISTA DE REPRODUCCIÓN"
-            android:textColor="#444444"
-            android:textSize="10sp"
-            android:paddingStart="12dp"
-            android:paddingBottom="2dp"/>
-
+        <!-- ListView -->
         <ListView
             android:id="@+id/playlist_view"
             android:layout_width="match_parent"
@@ -270,185 +201,4 @@
 
     </LinearLayout>
 
-    <!-- Drawer -->
-    <LinearLayout
-        android:id="@+id/pl_scrim"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#99000000"
-        android:visibility="gone"/>
-
-    <LinearLayout
-        android:id="@+id/pl_drawer"
-        android:layout_width="match_parent"
-        android:layout_height="400dp"
-        android:layout_gravity="bottom"
-        android:background="#111111"
-        android:visibility="gone"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:id="@+id/pl_name_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="8dp"
-            android:visibility="gone">
-
-            <EditText
-                android:id="@+id/pl_name_input"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:hint="Nombre de playlist..."
-                android:background="#1A1A1A"
-                android:textColor="#FFFFFF"
-                android:paddingStart="8dp"/>
-
-            <Button
-                android:id="@+id/btn_pl_save"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:text="OK"
-                android:backgroundTint="#00FF00"
-                android:textColor="#000000"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btn_pl_new"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="+ NUEVA PLAYLIST"
-                android:backgroundTint="#00FF00"
-                android:textColor="#000000"/>
-
-            <Button
-                android:id="@+id/btn_pl_close"
-                android:layout_width="48dp"
-                android:layout_height="wrap_content"
-                android:text="✕"
-                android:background="@android:color/transparent"
-                android:textColor="#AAAAAA"/>
-        </LinearLayout>
-
-        <ListView
-            android:id="@+id/pl_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
-    </LinearLayout>
-     
-
-
-            <Button
-                android:id="@+id/btn_search_clear"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:text="✕"
-                android:background="@android:color/transparent"
-                android:textColor="#AAAAAA"/>
-                
-            <Button
-                android:id="@+id/btn_eq"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="EQ"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_sort"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="AZ ARTISTA"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_search"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="BUSCAR"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-
-            <Button
-                android:id="@+id/btn_playlists"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="PL"
-                android:backgroundTint="#1A1A1A"
-                android:textColor="#CCCCCC"
-                android:textSize="12sp"/>
-        </LinearLayout>
-
-        <!-- Playlist -->
-        <TextView
-            android:id="@+id/library_label"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="LISTA DE REPRODUCCIÓN"
-            android:textColor="#444444"
-            android:textSize="10sp"
-            android:paddingStart="12dp"
-            android:paddingBottom="2dp"/>
-
-        <ListView
-            android:id="@+id/playlist_view"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:divider="#1A1A1A"
-            android:dividerHeight="1dp"/>
-
-    </LinearLayout>
-
-    <!-- Drawer -->
-    <LinearLayout
-        android:id="@+id/pl_scrim"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#99000000"
-        android:visibility="gone"/>
-
-    <LinearLayout
-        android:id="@+id/pl_drawer"
-        android:layout_width="match_parent"
-        android:layout_height="400dp"
-        android:layout_gravity="bottom"
-        android:background="#111111"
-        android:visibility="gone"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:id="@+id/pl_name_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="8dp"
-            android:visibility="gone">
-
-            <EditText
-                android:id="@+id/pl_name_input"
-                android:layout_width="0dp"
-                android:layout_height="36dp"
-                android:layout_weight="1"
-                android:hint="Nombre de playlist..."
-                android:background="#1A1A1A"
-                android:textColor="#FFFFFF"
-                android:paddingStart="8dp"/>
-
-   </androidx.coordinatorlayout.widget.CoordinatorLayout>
-     
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
